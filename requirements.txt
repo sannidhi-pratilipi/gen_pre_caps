@@ -1,0 +1,6 @@
+requests
+python-dotenv==1.2.1
+openai==2.26.0
+pandas
+openpyxl
+langchain-openai==1.2.1
