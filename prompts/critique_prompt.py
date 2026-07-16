@@ -22,3 +22,37 @@ CRITIQUE_SYSTEM_PROMPT = """
     VERDICT: PASS or FAIL
     REASON: one sentence — if FAIL, name the specific criterion that failed and why
     """
+
+
+# ────────────────────
+# LANGUAGE-SPECIFIC CRITIQUE CRITERIA
+# ────────────────────
+# Additional pass criteria enforced per language, mirroring the language-specific
+# priorities in the hook prompt.
+
+HINDI_CRITIQUE = """
+
+    ADDITIONAL HINDI CRITERIA (a hook FAILS if any is not met):
+
+    15. PROTAGONIST CONFLICT: the hook is centered on the main protagonist's core conflict — what they are fighting, fearing, chasing, or about to lose — not on a side character or background event
+    16. NO GENERIC REVEAL ENDING: the hook does not end on a flat, generic line such as "the truth is revealed," "a shocking secret comes out," or "everything changes"; the ending lands on a specific visual or emotional moment the reader can picture
+    17. NATURAL HINDI: written in simple, everyday spoken Hindi — no formal, literary, or Sanskritized vocabulary
+    """
+
+MALAYALAM_CRITIQUE = """
+
+    ADDITIONAL MALAYALAM CRITERIA (a hook FAILS if any is not met):
+
+    15. SHORT FIRST LINE: the first line is short and clear — not a long, heavy, cramped opening sentence
+    16. SIMPLE AND DIRECT: written in plain, direct, everyday Malayalam — nothing ornate or crowded
+    """
+
+LANGUAGE_CRITIQUE = {
+    "hi": HINDI_CRITIQUE,
+    "ml": MALAYALAM_CRITIQUE,
+}
+
+
+def build_critique_prompt(language: str | None = None) -> str:
+    extra = LANGUAGE_CRITIQUE.get((language or "").lower(), "")
+    return CRITIQUE_SYSTEM_PROMPT + extra

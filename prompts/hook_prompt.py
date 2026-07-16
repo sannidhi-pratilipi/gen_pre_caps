@@ -144,3 +144,40 @@ HOOK_SYSTEM_PROMPT = """
     • Written in the same language, tone, and slang as the story.
     • Output ONLY the hook text. No labels. No explanations. No markdown.
     """
+
+
+# ────────────────────
+# LANGUAGE-SPECIFIC GUIDANCE
+# ────────────────────
+# Appended to the base prompt per language. These are overriding priorities for
+# that language and take precedence when they conflict with anything above.
+
+HINDI_GUIDANCE = """
+    ────────────────────
+    HINDI-SPECIFIC PRIORITIES (HIGHEST PRIORITY)
+    ────────────────────
+
+    • Keep the main protagonist's central conflict at the heart of the hook. The tension must revolve around what the protagonist is fighting, fearing, chasing, or about to lose — not a side character or a background event.
+    • Never end on a generic reveal line such as "the truth is finally revealed," "a shocking secret comes out," or "everything changes." These are flat and forgettable. Instead, land the ending on a SPECIFIC visual or emotional moment — a concrete image, a gesture, a named consequence the reader can picture.
+    • Write in simple, natural, everyday Hindi — the way people actually speak. Avoid formal, literary, or Sanskritized vocabulary. Choose the plainer word every time.
+    """
+
+MALAYALAM_GUIDANCE = """
+    ────────────────────
+    MALAYALAM-SPECIFIC PRIORITIES (HIGHEST PRIORITY)
+    ────────────────────
+
+    • Keep the FIRST line short. A long, heavy opening sentence feels cramped and unclear and loses the essence of the hook. Open with a short, punchy line, then let the second line carry the rest.
+    • Write in simple and direct Malayalam — plain, everyday words, nothing ornate. Say it in the clearest way possible.
+    • Stay gripping and tense, but never at the cost of clarity. If a sentence feels crowded, break it or cut it down.
+    """
+
+LANGUAGE_GUIDANCE = {
+    "hi": HINDI_GUIDANCE,
+    "ml": MALAYALAM_GUIDANCE,
+}
+
+
+def build_hook_prompt(language: str | None = None) -> str:
+    guidance = LANGUAGE_GUIDANCE.get((language or "").lower(), "")
+    return HOOK_SYSTEM_PROMPT + guidance

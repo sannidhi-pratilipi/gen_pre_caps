@@ -18,11 +18,12 @@ NUM_CHAPTERS = 5  # number of hooks to generate
 MAX_WORKERS = 5
 
 
-def hook_worker(series_slug, chapter_number, prev_text, curr_text):
+def hook_worker(series_slug, chapter_number, prev_text, curr_text, language):
     hook = process_chapter(
         book_id=f"{series_slug}_chapter_{chapter_number}",
         previous_chapter_text=prev_text,
         current_chapter_text=curr_text,
+        language=language,
     )
     return chapter_number, hook
 
@@ -89,7 +90,7 @@ def main():
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         future_to_chapter = {
             executor.submit(
-                hook_worker, args.series, chapter_number, prev_text, curr_text
+                hook_worker, args.series, chapter_number, prev_text, curr_text, args.language
             ): chapter_number
             for chapter_number, prev_text, curr_text in pairs
         }
