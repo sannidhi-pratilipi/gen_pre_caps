@@ -33,6 +33,7 @@ HOOK_SYSTEM_PROMPT = """
     • [REVEAL] a specific, concrete element — the action being taken, the secret surfacing, the decision already made — OR [WITHHOLD] the event itself if the surprise of it is more powerful than a partial glimpse.
     • Withhold the outcome. The reader must turn the page to know what happens.
     • The hook must either pose a burning question in the reader's mind or hit them with something surprising — it should never feel flat or obvious.
+    • Keep the main protagonist's central conflict at the heart of the hook. The tension must revolve around what the protagonist is fighting, fearing, chasing, or about to lose — not a side character or a background event.
 
     The hook must contain at least one concrete anchor from this chapter, such as:
     • A specific confrontation between named characters
@@ -58,7 +59,7 @@ HOOK_SYSTEM_PROMPT = """
     • Do not mechanically forecast what "will" happen — enter the moment, don't announce it
     • Do not write about feelings alone — anchor to a specific action or consequence
     • Do not use poetic vagueness — mystery must come from partial revelation, not abstraction
-    • Do not use complex or literary vocabulary — write in plain, everyday language that a casual reader understands instantly
+    • Do not use complex, literary, archaic, or formal vocabulary — write in simple, natural, everyday language, the way people actually speak, and choose the plainer word every time so a casual reader understands instantly
     • Do not write clipped or fragmented sentences — each sentence must be complete and carry its full meaning
     • Do not similarize this hook to the previous chapter's hook
     • Do not resolve the tension
@@ -128,7 +129,7 @@ HOOK_SYSTEM_PROMPT = """
     ✓ Would a reader feel a physical pull to read this chapter after this?
     ✓ Is the outcome genuinely withheld — not hinted at, not resolved?
     ✓ Would this hook make someone lose sleep wanting to know what happens next?
-    ✓ Is the language simple and everyday — no complex or literary words that slow a casual reader down?
+    ✓ Is the language simple and everyday — no complex, archaic or literary words that slow a casual reader down?
     ✓ Is every sentence complete and full — no fragments, no clipped phrases?
 
     If the answer to any of these is no, rewrite.
@@ -152,28 +153,22 @@ HOOK_SYSTEM_PROMPT = """
 # Appended to the base prompt per language. These are overriding priorities for
 # that language and take precedence when they conflict with anything above.
 
-HINDI_GUIDANCE = """
-    ────────────────────
-    HINDI-SPECIFIC PRIORITIES (HIGHEST PRIORITY)
-    ────────────────────
-
-    • Keep the main protagonist's central conflict at the heart of the hook. The tension must revolve around what the protagonist is fighting, fearing, chasing, or about to lose — not a side character or a background event.
-    • Never end on a generic reveal line such as "the truth is finally revealed," "a shocking secret comes out," or "everything changes." These are flat and forgettable. Instead, land the ending on a SPECIFIC visual or emotional moment — a concrete image, a gesture, a named consequence the reader can picture.
-    • Write in simple, natural, everyday Hindi — the way people actually speak. Avoid formal, literary, or Sanskritized vocabulary. Choose the plainer word every time.
-    """
-
 MALAYALAM_GUIDANCE = """
     ────────────────────
     MALAYALAM-SPECIFIC PRIORITIES (HIGHEST PRIORITY)
     ────────────────────
 
-    • Keep the FIRST line short. A long, heavy opening sentence feels cramped and unclear and loses the essence of the hook. Open with a short, punchy line, then let the second line carry the rest.
+    • Target 20-25 words (this OVERRIDES the 35-word limit stated above). Count before finalizing. If over, cut.
     • Write in simple and direct Malayalam — plain, everyday words, nothing ornate. Say it in the clearest way possible.
+    • Single-Focus Rule: Focus on exactly ONE jaw-dropping action or character. Kepp the high stakes and drama.
+    • Write 2-3 short sentences following this structure. Every sentence must be short and punchy — no long or heavy sentences anywhere in the hook:
+        1. Setup: names the protagonist and the change or action they take. Short and fast.
+        2. Complication: the concrete rising tension — a specific image or event that raises the stakes. Short and fast.
+        3. Impact: land on a question, a reveal, or a surprise that names the opposing force or the hidden truth. Short and fast.
     • Stay gripping and tense, but never at the cost of clarity. If a sentence feels crowded, break it or cut it down.
     """
 
 LANGUAGE_GUIDANCE = {
-    "hi": HINDI_GUIDANCE,
     "ml": MALAYALAM_GUIDANCE,
 }
 
