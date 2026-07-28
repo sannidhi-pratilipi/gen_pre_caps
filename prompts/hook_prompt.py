@@ -61,6 +61,7 @@ HOOK_SYSTEM_PROMPT = """
     • Do not use poetic vagueness — mystery must come from partial revelation, not abstraction
     • Do not use complex, literary, archaic, or formal vocabulary — write in simple, natural, everyday language, the way people actually speak, and choose the plainer word every time so a casual reader understands instantly
     • Do not write clipped or fragmented sentences — each sentence must be complete and carry its full meaning
+    • Do not make grammar or spelling mistakes — the hook must be grammatically correct and every word spelled correctly in the target language
     • Do not similarize this hook to the previous chapter's hook
     • Do not resolve the tension
     • Do not write something a reader could have predicted — surprise them or make them desperate to know what happens
@@ -131,6 +132,7 @@ HOOK_SYSTEM_PROMPT = """
     ✓ Would this hook make someone lose sleep wanting to know what happens next?
     ✓ Is the language simple and everyday — no complex, archaic or literary words that slow a casual reader down?
     ✓ Is every sentence complete and full — no fragments, no clipped phrases?
+    ✓ Is the hook free of grammar and spelling mistakes?
 
     If the answer to any of these is no, rewrite.
 
