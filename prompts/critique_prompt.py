@@ -13,11 +13,13 @@ CRITIQUE_SYSTEM_PROMPT = """
     8. LENGTH: 1-2 sentences, 30-40 words
     9. NO VAGUENESS: tension comes from partial revelation of a real event, not abstract hints like "something big is coming" or "everything will change"
     10. NO DIALOGUE: does not quote exact lines from the story
-    11. LANGUAGE MATCH: written in the same language as the story
+    11. LANGUAGE MATCH: written entirely in the same language and script as the story — FAILS if any word (other than a character's exact name/nickname from the source chapter) is left in another language, or if characters from another script are mixed into a word
     12. TENSE CONSISTENCY: tense is used deliberately and does not mix within the hook — present for immediacy, past for irreversible acts, future only for imminent and specific threats
     13. SIMPLE LANGUAGE: written in simple, natural, everyday spoken language — no complex, literary, archaic, or formal vocabulary that would slow a casual reader down
     14. FULL SENTENCES: every sentence is complete and carries its full meaning — no fragments or clipped phrases
     15. GRAMMAR AND SPELLING: the hook is grammatically correct and every word is spelled correctly in the target language — FAILS on any grammar or spelling mistake
+    16. CHARACTER NAME ACCURACY: every character name matches exactly how it appears in the chapter text — FAILS if any name is altered, translated, simplified, misspelled, or swapped for a different character
+    17. EVENT DISTINCTIVENESS: the hook's central event is not the same major event that was already the focus of CHAPTER JUST READ — FAILS if this chapter's hook re-hooks on an event that is simply continuing or repeating from the previous chapter
 
     Respond in exactly two lines:
     VERDICT: PASS or FAIL
@@ -35,10 +37,12 @@ MALAYALAM_CRITIQUE = """
 
     ADDITIONAL MALAYALAM CRITERIA (a hook FAILS if any is not met):
 
-    16. SINGLE FOCUS: focuses on exactly ONE jaw-dropping action or character — FAILS if it mixes two different subplots or character actions into the same hook
-    17. SETUP/COMPLICATION/IMPACT STRUCTURE: written as 2-3 short sentences — a setup line (protagonist + the change or action they take), a complication line (the concrete rising tension), and an impact line (a question, reveal, or surprise naming the opposing force or hidden truth). FAILS if any sentence is long, heavy, or crowded rather than short and punchy
-    18. SIMPLE AND DIRECT: written in plain, direct, everyday Malayalam — nothing ornate or crowded
-    19. LENGTH (OVERRIDES criterion 8): 2-3 sentences, 20-25 words — a hook longer than 25 words FAILS
+    18. SINGLE FOCUS: focuses on exactly ONE jaw-dropping action or character — FAILS if it mixes two different subplots or character actions into the same hook
+    19. SETUP/COMPLICATION/IMPACT STRUCTURE: written as 2-3 short sentences — a setup line (protagonist + the change or action they take), a complication line (the concrete rising tension), and an impact line (a question, reveal, or surprise naming the opposing force or hidden truth). FAILS if any sentence is long, heavy, or crowded rather than short and punchy
+    20. SIMPLE AND DIRECT: written in plain, direct, everyday Malayalam — nothing ornate or crowded
+    21. LENGTH (OVERRIDES criterion 8): 2-3 sentences, 20-25 words — a hook longer than 25 words FAILS
+    22. SCRIPT PURITY: every word is written in Malayalam script — FAILS if any English/Hindi/Tamil/Telugu/Kannada word is left untransliterated, or if a word is corrupted by characters from another script mixed into it. Exception: a character's exact name/nickname as it appears in the source chapter.
+    23. MALAYALAM GRAMMAR: case endings (വിഭക്തി), verb tense/agreement, and sandhi (word joining) must all be correct standard Malayalam — FAILS on any case, agreement, or sandhi error, even a single one
     """
 
 LANGUAGE_CRITIQUE = {

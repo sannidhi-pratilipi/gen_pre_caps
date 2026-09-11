@@ -21,6 +21,8 @@ HOOK_SYSTEM_PROMPT = """
 
     If multiple things happen, choose the ONE moment that is the most emotionally charged — not the most structurally significant.
 
+    If the most exciting moment in THIS CHAPTER is the same major event that was already the focus of CHAPTER JUST READ (the same fight, reveal, or confrontation simply continuing or repeating), do NOT hook on it again. Choose the next most exciting DISTINCT moment in this chapter instead — two chapters in a row must never be hooked around the same event.
+
     ────────────────────
     STEP 2: WRITE THE HOOK
     ────────────────────
@@ -29,7 +31,7 @@ HOOK_SYSTEM_PROMPT = """
 
     • Do NOT lift, quote, or closely paraphrase any sentence from the chapter text.
     • Reinterpret the moment creatively — your voice, not the author's.
-    • Name the character or force at the center of it.
+    • Name the character or force at the center of it, using their name exactly as it appears in the source chapter text — do not alter, translate, simplify, shorten, or misspell any character name.
     • [REVEAL] a specific, concrete element — the action being taken, the secret surfacing, the decision already made — OR [WITHHOLD] the event itself if the surprise of it is more powerful than a partial glimpse.
     • Withhold the outcome. The reader must turn the page to know what happens.
     • The hook must either pose a burning question in the reader's mind or hit them with something surprising — it should never feel flat or obvious.
@@ -133,6 +135,8 @@ HOOK_SYSTEM_PROMPT = """
     ✓ Is the language simple and everyday — no complex, archaic or literary words that slow a casual reader down?
     ✓ Is every sentence complete and full — no fragments, no clipped phrases?
     ✓ Is the hook free of grammar and spelling mistakes?
+    ✓ Does every character name match exactly how it appears in the source chapter?
+    ✓ Is this a different event from the one CHAPTER JUST READ was already focused on — not a continuation or repeat of it?
 
     If the answer to any of these is no, rewrite.
 
@@ -145,6 +149,7 @@ HOOK_SYSTEM_PROMPT = """
     • No hyphens or em-dashes anywhere in the hook.
     • No dialogue or quoted lines from the story.
     • Written in the same language, tone, and slang as the story.
+    • Write every word in the target language and its own script. Never leave an English (or other language) word untranslated, and never let characters from another script bleed into a word — the only exception is a character's name or nickname, which stays exactly as it appears in the source chapter text even if that is in a different script.
     • Output ONLY the hook text. No labels. No explanations. No markdown.
     """
 
@@ -162,6 +167,8 @@ MALAYALAM_GUIDANCE = """
 
     • Target 20-25 words (this OVERRIDES the 35-word limit stated above). Count before finalizing. If over, cut.
     • Write in simple and direct Malayalam — plain, everyday words, nothing ornate. Say it in the clearest way possible.
+    • Write only in Malayalam script (no English, Hindi, Tamil, Telugu, or Kannada words or characters mixed in), except a character's exact name/nickname from the source chapter. If a concept has no natural Malayalam word, use the common Malayalam-script transliteration a Malayalam reader would actually use — never leave the English word as is and never let another script's letters slip into a Malayalam word.
+    • Every word must be grammatically correct standard Malayalam: correct case endings (വിഭക്തി), correct verb tense and agreement, and correct sandhi (word-joining) — re-read the hook once specifically for grammar before finalizing, independent of the word count and content checks.
     • Single-Focus Rule: Focus on exactly ONE jaw-dropping action or character. Kepp the high stakes and drama.
     • Write 2-3 short sentences following this structure. Every sentence must be short and punchy — no long or heavy sentences anywhere in the hook:
         1. Setup: names the protagonist and the change or action they take. Short and fast.

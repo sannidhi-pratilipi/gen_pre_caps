@@ -96,7 +96,18 @@ def _call_model(model: str, messages, extra_metadata: dict | None = None) -> str
         raise ContentFilteredError(
             f"{model} returned no choices — content filtered by gateway"
         )
-    return response.choices[0].message.content or ""
+
+    choice = response.choices[0]
+    content = choice.message.content or ""
+
+    # Gemini also filters by returning a choice with finish_reason=content_filter
+    # and a null content — without this the caller silently gets an empty hook.
+    if not content.strip():
+        raise ContentFilteredError(
+            f"{model} returned empty content (finish_reason={choice.finish_reason})"
+        )
+
+    return content
 
 
 def complete(messages, retries: int = 5, metadata: dict | None = None) -> str:
