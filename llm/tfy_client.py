@@ -12,6 +12,7 @@ load_dotenv()
 
 # MODEL = "openai/gpt-5.4-nano"
 MODEL = "google-vertex-marketing/gemini-3-flash-preview"
+# MODEL="openai/gpt-5.6-luna"
 FALLBACK_MODEL = "openai/gpt-5-mini"
 
 _BASE_METADATA = {

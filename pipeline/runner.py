@@ -1,3 +1,4 @@
+from pipeline.arc_planning import ChapterMapping
 from pipeline.generator import critique_hook, generate_hook, rewrite_hook
 from pipeline.validators import find_foreign_script_chars
 
@@ -5,15 +6,34 @@ MAX_ITERATIONS = 3
 
 
 def process_chapter(
-    book_id: str, previous_chapter_text: str, current_chapter_text: str, language: str | None = None
+    book_id: str,
+    chapter_read_text: str,
+    target_chapter_text: str,
+    mapping: ChapterMapping,
+    language: str | None = None,
+    previous_reveal: str | None = None,
+    same_scene_precaps: list[str] | None = None,
+    previous_precap: str | None = None,
 ) -> str:
-    print(f"Generating hook for {book_id}...")
+    print(
+        f"Generating precap for {book_id} "
+        f"(chapter {mapping.chapter_number} -> chapter {mapping.target_chapter})..."
+    )
 
     metadata: dict = {"book_id": book_id.split("_")[0]}
     if "_chapter_" in book_id:
         metadata["chapter_number"] = book_id.split("_chapter_")[-1]
 
-    hook = generate_hook(previous_chapter_text, current_chapter_text, metadata=metadata, language=language)
+    hook = generate_hook(
+        chapter_read_text,
+        target_chapter_text,
+        mapping,
+        metadata=metadata,
+        language=language,
+        previous_reveal=previous_reveal,
+        same_scene_precaps=same_scene_precaps,
+        previous_precap=previous_precap,
+    )
 
     for attempt in range(1, MAX_ITERATIONS + 1):
         bad_chars = find_foreign_script_chars(hook, language)
@@ -27,14 +47,30 @@ def process_chapter(
             )
         else:
             passes, reason = critique_hook(
-                hook, previous_chapter_text, current_chapter_text, metadata=metadata, language=language
+                hook,
+                chapter_read_text,
+                target_chapter_text,
+                mapping,
+                metadata=metadata,
+                language=language,
             )
         if passes:
             break
         print(
             f"[{book_id}] Critique failed (attempt {attempt}/{MAX_ITERATIONS}) — {reason}. Rewriting..."
         )
-        rewritten = rewrite_hook(hook, reason, previous_chapter_text, current_chapter_text, metadata=metadata, language=language)
+        rewritten = rewrite_hook(
+            hook,
+            reason,
+            chapter_read_text,
+            target_chapter_text,
+            mapping,
+            metadata=metadata,
+            language=language,
+            previous_reveal=previous_reveal,
+            same_scene_precaps=same_scene_precaps,
+            previous_precap=previous_precap,
+        )
 
         # Never let a blank rewrite replace a usable hook.
         if not rewritten.strip():
