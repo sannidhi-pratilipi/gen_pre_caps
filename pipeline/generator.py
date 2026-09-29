@@ -1,6 +1,6 @@
 from llm.tfy_client import complete
 from pipeline.arc_planning import ChapterMapping
-from prompts.critique_prompt import build_critique_prompt
+from prompts.critique_prompt import build_critique_prompt, build_predecessor_block
 from prompts.hook_prompt import build_bridge_context, build_hook_prompt
 
 
@@ -26,9 +26,9 @@ def generate_hook(
     language: str | None = None,
     previous_reveal: str | None = None,
     same_scene_precaps: list[str] | None = None,
-    previous_precap: str | None = None,
+    recent_precaps: list[str] | None = None,
 ) -> str:
-    bridge_context = build_bridge_context(mapping, previous_reveal, same_scene_precaps, previous_precap)
+    bridge_context = build_bridge_context(mapping, previous_reveal, same_scene_precaps, recent_precaps)
     messages = [
         {"role": "system", "content": build_hook_prompt(language)},
         {
@@ -46,15 +46,23 @@ def critique_hook(
     mapping: ChapterMapping,
     metadata: dict | None = None,
     language: str | None = None,
+    same_scene_precaps: list[str] | None = None,
+    recent_precaps: list[str] | None = None,
 ) -> tuple[bool, str]:
-    # the predecessor inputs are deliberately not passed here — no
-    # critique criterion checks either (only generation uses them, to steer away
-    # from the previous precap), so sending them would just be inert context.
+    # The predecessors go in as their own block rather than through
+    # build_bridge_context: that one is written at the hook's author ("yours must
+    # go past all of these"), which is the wrong voice for an editor. They are
+    # sent at all only because repetition is the single failure that cannot be
+    # judged from the hook and the chapters alone.
     bridge_context = build_bridge_context(mapping)
+    predecessors = build_predecessor_block(same_scene_precaps, recent_precaps)
     content = _chapter_content(chapter_read_text, target_chapter_text, mapping, bridge_context)
     messages = [
-        {"role": "system", "content": build_critique_prompt(language)},
-        {"role": "user", "content": f"{content}\n\nHook to evaluate:\n{hook}"},
+        {
+            "role": "system",
+            "content": build_critique_prompt(language, has_predecessors=bool(predecessors)),
+        },
+        {"role": "user", "content": f"{content}{predecessors}\n\nHook to evaluate:\n{hook}"},
     ]
     response = complete(messages, metadata=metadata)
 
@@ -77,9 +85,9 @@ def rewrite_hook(
     language: str | None = None,
     previous_reveal: str | None = None,
     same_scene_precaps: list[str] | None = None,
-    previous_precap: str | None = None,
+    recent_precaps: list[str] | None = None,
 ) -> str:
-    bridge_context = build_bridge_context(mapping, previous_reveal, same_scene_precaps, previous_precap)
+    bridge_context = build_bridge_context(mapping, previous_reveal, same_scene_precaps, recent_precaps)
     messages = [
         {"role": "system", "content": build_hook_prompt(language)},
         {

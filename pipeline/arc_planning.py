@@ -1,4 +1,6 @@
+import re
 import xml.etree.ElementTree as ET
+from collections import Counter
 from dataclasses import dataclass, replace
 
 from llm.tfy_client import complete
@@ -60,13 +62,34 @@ def _format_chapters_block(chapters: list[str]) -> str:
     return f"<chapters>\n{body}\n</chapters>"
 
 
-def _extract_root(response: str, tag: str) -> ET.Element:
-    start = response.find(f"<{tag}")
-    close_tag = f"</{tag}>"
-    end = response.rfind(close_tag)
-    if start == -1 or end == -1:
-        raise ValueError(f"Response did not contain a <{tag}> root element:\n{response}")
-    return ET.fromstring(response[start : end + len(close_tag)])
+class BlueprintParseError(ValueError):
+    """Nothing usable came back from Pass 1. Carries the raw response so the
+    caller can write it out — a planning call is expensive and the text is the
+    only way to see what the model actually did."""
+
+    def __init__(self, message: str, response: str):
+        super().__init__(message)
+        self.response = response
+
+
+def _mapping_blocks(response: str) -> list[str]:
+    """Every <mapping>...</mapping> block in the response, as raw text.
+
+    Deliberately not a document parse. One mismatched tag anywhere in a
+    twenty-mapping blueprint makes ElementTree reject the whole document, which
+    costs every chapter its precap over a single malformed row. Slicing the
+    blocks out first means a broken row costs only itself."""
+    return re.findall(r"<mapping>.*?</mapping>", response, flags=re.DOTALL)
+
+
+def _field(block: str, tag: str) -> str:
+    """One field out of a mapping block, without parsing the block as XML.
+
+    The fallback path for rows ElementTree refuses: an unescaped & or a stray
+    tag inside prose is common in generated XML and does not make the field
+    itself unreadable."""
+    match = re.search(rf"<{tag}>(.*?)</{tag}>", block, flags=re.DOTALL)
+    return match.group(1).strip() if match else ""
 
 
 def _text(el: ET.Element, tag: str) -> str:
@@ -88,40 +111,53 @@ def _call_metadata(stage: str, language: str | None) -> dict:
     return metadata
 
 
-def _parse_turning_points(root: ET.Element) -> list[int]:
-    """The chapters the planner itself called the story's peaks. Parsed so the
-    blueprint can be checked against them: an anchor staircase that drifts past
-    a peak is the failure that makes precaps tease filler, and it is invisible
-    unless the planner is made to name the peaks up front."""
-    container = root.find("turning_points")
-    if container is None:
-        return []
-    return sorted(
-        int(c.text.strip())
-        for c in container.findall("chapter")
-        if c.text and c.text.strip().isdigit()
-    )
-
-
 def _parse_blueprint(response: str) -> list[ChapterMapping]:
-    root = _extract_root(response, "blueprint")
+    blocks = _mapping_blocks(response)
+    if not blocks:
+        raise BlueprintParseError(
+            "Response contained no <mapping> elements — Pass 1 returned nothing usable",
+            response,
+        )
+
     parsed: list[ChapterMapping] = []
-    for el in root.findall("mapping"):
-        chapter_number = _optional_int(el, "chapter_id")
-        target_chapter = _optional_int(el, "target_chapter_id")
-        scene_description = _text(el, "scene_description")
+    unreadable = 0
+    for block in blocks:
+        try:
+            el = ET.fromstring(block)
+            get = lambda tag: _text(el, tag)  # noqa: E731
+        except ET.ParseError:
+            # malformed row: read the fields out of the text instead of losing it
+            unreadable += 1
+            get = lambda tag: _field(block, tag)  # noqa: E731
+
+        chapter_number = int(get("chapter_id")) if get("chapter_id").isdigit() else None
+        target_chapter = (
+            int(get("target_chapter_id")) if get("target_chapter_id").isdigit() else None
+        )
+        scene_description = get("scene_description")
         if chapter_number is None or target_chapter is None or not scene_description:
             continue
-        emotion = _text(el, "dominant_emotion").upper()
+        emotion = get("dominant_emotion").upper()
         parsed.append(
             ChapterMapping(
                 chapter_number=chapter_number,
                 target_chapter=target_chapter,
                 scene_description=scene_description,
-                bridge_reasoning=_text(el, "bridge_reasoning"),
-                reveal=_text(el, "reveal"),
+                bridge_reasoning=get("bridge_reasoning"),
+                reveal=get("reveal"),
                 dominant_emotion=emotion if emotion in EMOTIONS else "",
             )
+        )
+
+    if unreadable:
+        print(
+            f"[blueprint] {unreadable} of {len(blocks)} mappings were not valid XML — "
+            "their fields were read out of the text instead"
+        )
+    if not parsed:
+        print(
+            f"[blueprint] none of the {len(blocks)} mappings had a usable chapter_id, "
+            "target_chapter_id and scene_description"
         )
     return parsed
 
@@ -254,6 +290,30 @@ def enforce_constraints(
     return kept, rejected
 
 
+def blueprint_from_xml(
+    response: str,
+    chapter_count: int,
+    lookahead: int = LOOKAHEAD,
+    precap_limit: int | None = None,
+    max_target_reuse: int = MAX_TARGET_REUSE,
+) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
+    """Turn a blueprint XML into mappings, without calling the planner.
+
+    The same parse and constraint check Pass 1 runs on a fresh response, split
+    out so a blueprint already sitting on disk can be reused. The constraints
+    are re-checked rather than trusted: a stored blueprint may have been written
+    against a different lookahead or chapter count, or edited by hand.
+
+    Raises BlueprintParseError if the XML holds no usable mappings, so a
+    truncated or half-written file falls back to a real planning call instead of
+    silently producing no precaps."""
+    kept, rejected = enforce_constraints(
+        _parse_blueprint(response), chapter_count, lookahead, precap_limit, max_target_reuse
+    )
+    _report_blueprint(kept)
+    return kept, rejected
+
+
 def plan_precaps(
     chapters: list[str],
     language: str | None = None,
@@ -286,27 +346,21 @@ def plan_precaps(
         {"role": "user", "content": _format_chapters_block(chapters)},
     ]
     response = complete(messages, metadata=_call_metadata("precap_blueprint", language))
-    kept, rejected = enforce_constraints(
-        _parse_blueprint(response), chapter_count, lookahead, precap_limit, max_target_reuse
+    kept, rejected = blueprint_from_xml(
+        response, chapter_count, lookahead, precap_limit, max_target_reuse
     )
-
-    peaks = _parse_turning_points(_extract_root(response, "blueprint"))
-    if peaks:
-        targeted = {m.target_chapter for m in kept}
-        missed = [p for p in peaks if p not in targeted]
-        # how much of the blueprint is actually spent on the story's peaks —
-        # the number worth watching, since a peak given a one-chapter run is a
-        # peak mostly wasted
-        on_peak = sum(1 for m in kept if m.target_chapter in peaks)
-        share = round(100 * on_peak / len(kept)) if kept else 0
-        print(
-            f"[blueprint] turning points {peaks}: {on_peak}/{len(kept)} precaps "
-            f"aim at one ({share}%)"
-        )
-        if missed:
-            print(
-                f"[blueprint] never aimed at {missed} — those precaps tease filler "
-                "instead of the peak"
-            )
-
     return kept, rejected, response
+
+
+def _report_blueprint(kept: list[ChapterMapping]) -> None:
+    """How the blueprint paced itself. Advisory — nothing here rejects a
+    mapping."""
+    # Run lengths: under the sticky-anchor rule a run's length is the distance
+    # its first chapter reaches, so the distance spread shows whether runs were
+    # matched to their peaks or stretched to the cap.
+    if kept:
+        spread = Counter(m.distance for m in kept)
+        print(
+            "[blueprint] precap distances: "
+            + ", ".join(f"{d} chapter{'s' if d > 1 else ''} ahead x{spread[d]}" for d in sorted(spread))
+        )
