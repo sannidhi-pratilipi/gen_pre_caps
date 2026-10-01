@@ -104,10 +104,15 @@ def _optional_int(el: ET.Element, tag: str) -> int | None:
     return int(value) if value.isdigit() else None
 
 
-def _call_metadata(stage: str, language: str | None) -> dict:
+def _call_metadata(stage: str, language: str | None, run_id: str | None = None) -> dict:
     metadata = {"stage": stage}
     if language:
         metadata["language"] = language
+    if run_id:
+        # Tags every call made on behalf of one series' run, so a blueprint call
+        # and the precap calls that followed from it can be found together —
+        # several series run concurrently and otherwise only differ by book_id.
+        metadata["run_id"] = run_id
     return metadata
 
 
@@ -320,6 +325,7 @@ def plan_precaps(
     lookahead: int = LOOKAHEAD,
     precap_limit: int | None = None,
     max_target_reuse: int = MAX_TARGET_REUSE,
+    run_id: str | None = None,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]], str]:
     """Pass 1: one LLM call over the full chapter text (no summarization step —
     the planner reads the chapters themselves) that maps every chapter N to a
@@ -345,7 +351,9 @@ def plan_precaps(
         },
         {"role": "user", "content": _format_chapters_block(chapters)},
     ]
-    response = complete(messages, metadata=_call_metadata("precap_blueprint", language))
+    response = complete(
+        messages, metadata=_call_metadata("precap_blueprint", language, run_id)
+    )
     kept, rejected = blueprint_from_xml(
         response, chapter_count, lookahead, precap_limit, max_target_reuse
     )

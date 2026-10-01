@@ -14,6 +14,7 @@ def process_chapter(
     previous_reveal: str | None = None,
     same_scene_precaps: list[str] | None = None,
     recent_precaps: list[str] | None = None,
+    run_id: str | None = None,
 ) -> str:
     print(
         f"Generating precap for {book_id} "
@@ -23,6 +24,10 @@ def process_chapter(
     metadata: dict = {"book_id": book_id.split("_")[0]}
     if "_chapter_" in book_id:
         metadata["chapter_number"] = book_id.split("_chapter_")[-1]
+    if run_id:
+        # Carried on the generate, critique and rewrite calls alike, so all the
+        # traffic for one chapter of one run groups under a single id.
+        metadata["run_id"] = run_id
 
     hook = generate_hook(
         chapter_read_text,
