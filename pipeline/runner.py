@@ -11,7 +11,7 @@ def process_chapter(
     target_chapter_text: str,
     mapping: ChapterMapping,
     language: str | None = None,
-    previous_reveal: str | None = None,
+    previous_limit: str | None = None,
     same_scene_precaps: list[str] | None = None,
     recent_precaps: list[str] | None = None,
     run_id: str | None = None,
@@ -35,7 +35,7 @@ def process_chapter(
         mapping,
         metadata=metadata,
         language=language,
-        previous_reveal=previous_reveal,
+        previous_limit=previous_limit,
         same_scene_precaps=same_scene_precaps,
         recent_precaps=recent_precaps,
     )
@@ -74,7 +74,7 @@ def process_chapter(
             mapping,
             metadata=metadata,
             language=language,
-            previous_reveal=previous_reveal,
+            previous_limit=previous_limit,
             same_scene_precaps=same_scene_precaps,
             recent_precaps=recent_precaps,
         )

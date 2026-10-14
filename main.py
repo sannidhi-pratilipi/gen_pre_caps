@@ -1,3 +1,4 @@
+import argparse
 from collections import deque
 from itertools import islice
 from pathlib import Path
@@ -16,7 +17,7 @@ from pipeline.runner import process_chapter
 # Precaps are generated for chapters 1..PRECAP_LIMIT only. Chapters past that
 # are still fetched and planned over, because a precap at chapter
 # PRECAP_LIMIT may target a scene up to LOOKAHEAD chapters ahead.
-PRECAP_LIMIT = 4
+PRECAP_LIMIT = 10
 CHAPTER_LIMIT = 15
 
 # Pass 2 is sequential because each precap is shown the ones written before it:
@@ -48,18 +49,43 @@ def write_markdown(output_file, series_slug, language, results):
     output_file.write_text("\n".join(lines), encoding="utf-8")
 
 
-def main():
-    # series_slug = "wxljcrzqxhlj"
-    series_slug="vnustigw45xt"
-    language = "hi"
+def parse_args(argv=None):
+    """CLI over the few things that change between runs.
+
+    Every default is the value this script carried hardcoded, so `python
+    main.py` with no arguments behaves exactly as it did before."""
+    parser = argparse.ArgumentParser(description="Generate precaps for one series.")
+    parser.add_argument("-s", "--series", default="gjrvhkgosiyn", help="series slug")
+    parser.add_argument("-l", "--language", default="ml", help="language code, e.g. hi or ml")
+    parser.add_argument(
+        "--precap-limit", type=int, default=PRECAP_LIMIT,
+        help=f"generate precaps for chapters 1..N (default {PRECAP_LIMIT})",
+    )
+    parser.add_argument(
+        "--chapter-limit", type=int, default=CHAPTER_LIMIT,
+        help=f"fetch N chapters; must exceed --precap-limit so late precaps have a target (default {CHAPTER_LIMIT})",
+    )
+    parser.add_argument(
+        "-o", "--output-dir", default="output-latest-rq",
+        help="directory the per-series output folder is created under",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv=None):
+    args = parse_args(argv)
+    series_slug = args.series
+    language = args.language
+    precap_limit = args.precap_limit
+    chapter_limit = args.chapter_limit
     ingestor = ChapterIngestor()
 
-    chapters = list(islice(ingestor.iter_series_chapters(series_slug, language=language), CHAPTER_LIMIT))
+    chapters = list(islice(ingestor.iter_series_chapters(series_slug, language=language), chapter_limit))
     if len(chapters) < 2:
         print("Not enough chapters to generate precaps")
         return
 
-    output_dir = Path("output-latest-rq") / series_slug
+    output_dir = Path(args.output_dir) / series_slug
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # ── Pass 1: one planning call over the full chapter text — unless a
@@ -80,7 +106,7 @@ def main():
                 existing_xml,
                 chapter_count=len(chapters),
                 lookahead=LOOKAHEAD,
-                precap_limit=PRECAP_LIMIT,
+                precap_limit=precap_limit,
             )
             if mappings:
                 blueprint_xml = existing_xml
@@ -97,7 +123,7 @@ def main():
     if blueprint_xml is None:
         try:
             mappings, rejected, blueprint_xml = plan_precaps(
-                chapters, language=language, lookahead=LOOKAHEAD, precap_limit=PRECAP_LIMIT
+                chapters, language=language, lookahead=LOOKAHEAD, precap_limit=precap_limit
             )
         except BlueprintParseError as e:
             # the planning call is expensive; keep what came back so it can be read
@@ -113,7 +139,7 @@ def main():
 
     # The blueprint itself is not printed — it is already on disk as the raw
     # planner XML above. Only the count and anything that went wrong is logged.
-    print(f"\nBlueprint: {len(mappings)}/{PRECAP_LIMIT} chapters mapped")
+    print(f"\nBlueprint: {len(mappings)}/{precap_limit} chapters mapped")
     if rejected:
         print("\nDropped by constraint check (no precap generated for these):")
         for chapter_number, reason in rejected:
@@ -154,7 +180,7 @@ def main():
                 target_chapter_text=chapters[mapping.target_chapter - 1],
                 mapping=mapping,
                 language=language,
-                previous_reveal=previous_mapping.reveal if same_run else None,
+                previous_limit=previous_mapping.limit if same_run else None,
                 same_scene_precaps=list(run_precaps),
                 recent_precaps=list(recent_precaps),
             )

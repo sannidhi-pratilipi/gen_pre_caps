@@ -36,14 +36,14 @@ class ChapterMapping:
 
     Every chapter in an anchor run shares ONE `scene_description` — the run does
     not tease a different moment each time, it peels back the same moment layer
-    by layer. `reveal` is what this particular precap is allowed to expose about
+    by layer. `limit` is what this particular precap must hold back about
     it, and is the only field that changes down the run."""
 
     chapter_number: int
     target_chapter: int
     scene_description: str
     bridge_reasoning: str
-    reveal: str = ""
+    limit: str = ""
     dominant_emotion: str = ""
 
     @property
@@ -87,8 +87,17 @@ def _field(block: str, tag: str) -> str:
 
     The fallback path for rows ElementTree refuses: an unescaped & or a stray
     tag inside prose is common in generated XML and does not make the field
-    itself unreadable."""
+    itself unreadable.
+
+    The closing tag is not required to match the opening one. Generators get it
+    wrong often enough (<chapter_id>4</target_chapter_id>) that insisting on a
+    matching close silently drops a row whose content is perfectly good — and a
+    dropped row reads downstream as a gap in the plan, which costs a whole
+    re-planning call. Prefer the matching close where it exists; fall back to
+    whatever close comes first."""
     match = re.search(rf"<{tag}>(.*?)</{tag}>", block, flags=re.DOTALL)
+    if match is None:
+        match = re.search(rf"<{tag}>(.*?)</\w+>", block, flags=re.DOTALL)
     return match.group(1).strip() if match else ""
 
 
@@ -149,7 +158,11 @@ def _parse_blueprint(response: str) -> list[ChapterMapping]:
                 target_chapter=target_chapter,
                 scene_description=scene_description,
                 bridge_reasoning=get("bridge_reasoning"),
-                reveal=get("reveal"),
+                # <reveal> is what this field was called before it was renamed.
+                # Blueprints written then are still on disk and still worth
+                # reusing, and a row read without its limit is worse than a
+                # stale tag name: the precap is written with no ceiling at all.
+                limit=get("limit") or get("reveal"),
                 dominant_emotion=emotion if emotion in EMOTIONS else "",
             )
         )

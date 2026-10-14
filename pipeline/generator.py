@@ -24,11 +24,11 @@ def generate_hook(
     mapping: ChapterMapping,
     metadata: dict | None = None,
     language: str | None = None,
-    previous_reveal: str | None = None,
+    previous_limit: str | None = None,
     same_scene_precaps: list[str] | None = None,
     recent_precaps: list[str] | None = None,
 ) -> str:
-    bridge_context = build_bridge_context(mapping, previous_reveal, same_scene_precaps, recent_precaps)
+    bridge_context = build_bridge_context(mapping, previous_limit, same_scene_precaps, recent_precaps)
     messages = [
         {"role": "system", "content": build_hook_prompt(language)},
         {
@@ -83,11 +83,11 @@ def rewrite_hook(
     mapping: ChapterMapping,
     metadata: dict | None = None,
     language: str | None = None,
-    previous_reveal: str | None = None,
+    previous_limit: str | None = None,
     same_scene_precaps: list[str] | None = None,
     recent_precaps: list[str] | None = None,
 ) -> str:
-    bridge_context = build_bridge_context(mapping, previous_reveal, same_scene_precaps, recent_precaps)
+    bridge_context = build_bridge_context(mapping, previous_limit, same_scene_precaps, recent_precaps)
     messages = [
         {"role": "system", "content": build_hook_prompt(language)},
         {

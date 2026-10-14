@@ -19,7 +19,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
     For each of those chapters N, output:
       - target_chapter_id (K): the later chapter the precap reaches forward to. K may be the very next chapter, N + 1 — see rule 5.
       - scene_description: chapter K's PEAK EVENT — the one moment chapter K exists to deliver, as you identified it in step 2. Not an incidental scene from K, not a summary of K. Every chapter in the same run shares this — it is a property of the anchor, not of N.
-      - reveal: how much of that scene THIS precap is allowed to expose. This is the only field that changes as the run counts down.
+      - limit: written in two labelled segments, PERMIT: and PROHIBIT:. PERMIT names the most of that scene this precap may touch; PROHIBIT names what it must keep from the reader. Both segments are required. The permission is a ceiling, never a quota to fill. This is the only field that changes as the run counts down.
       - dominant_emotion: the ONE feeling this precap is built to land.
       - bridge_reasoning: THE ONE CONCRETE THING IN CHAPTER N the precap will stand on, written as a plain fact about chapter N and nothing else — what a character said, swore or demanded; a decision taken or refused; a question it ended on; an object or letter it produced; a belief it left someone holding. Never an explanation of why the pairing works.
           GOOD: "Chapter 4 ends with Radha refusing her brother-in-law the keys, certain that settles it."
@@ -67,7 +67,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
        Because rule 2 makes every chapter from an anchor's first use up to K-1 carry that same K, the run's length is exactly the distance the FIRST chapter of the run reaches. So this cap and the window in rule 1 are the same limit seen from two sides: when you start a new anchor, never pick a K more than {max_target_reuse} chapters out, or you have committed more chapters to it than are allowed.
 
     5. CHOOSE THE ANCHOR DISTANCE BY THE PEAK, NOT BY THE CAP: within that cap, a run does not need several scenes — it needs one peak that can be uncovered in stages. Ask how many honest layers the peak has: an unnamed object, an unnamed person, an unnamed act, a hidden motive? A peak with three things that can be withheld and then named one at a time can carry a full {max_target_reuse}-chapter run. A peak whose whole content is obvious in one sentence cannot, so anchor it 2 chapters out, or 1.
-       K = N + 1 is often the right answer, not a fallback. A one-chapter run has no later rung to save anything for, so its reveal may name more of the peak than any other rung does — which is what makes an immediate tease land. It still keeps one piece back. The reader is a single chapter away, so very little is needed to pull them, and that one withheld piece is what they open the chapter for. Take the next chapter whenever it holds a real peak. The only reason to reach further is that a later chapter holds a BIGGER peak AND the chapters in between can genuinely be spent layering toward it.
+       K = N + 1 is often the right answer, not a fallback. A one-chapter run has no later rung to save anything for, so its limit may name more of the peak than any other rung does — which is what makes an immediate tease land. It still keeps one piece back. The reader is a single chapter away, so very little is needed to pull them, and that one withheld piece is what they open the chapter for. Take the next chapter whenever it holds a real peak. The only reason to reach further is that a later chapter holds a BIGGER peak AND the chapters in between can genuinely be spent layering toward it.
 
     6. BRIDGE RELEVANCE: the scene you pick from chapter K must connect to something genuinely present in chapter N — a question chapter N leaves open, a threat it introduces, a promise it makes, a decision it sets in motion, a character it puts at risk. A reader who has read up to the end of chapter N and no further must be able to feel that connection with no extra explanation. Never pair a chapter with a scene that has nothing to do with it just to satisfy the window.
 
@@ -82,16 +82,18 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
 
        Only drop a scene when there is genuinely no thread from chapter N to it at all.
 
-    8. ONE SCENE PER RUN, UNCOVERED IN LAYERS: every chapter in a run points at the SAME scene. Do not hunt for a different moment for each chapter. What changes is how much of that one scene you are willing to name — each precap uncovers one more layer than the last, and the last one before the anchor names most of the act and keeps back the one piece that completes it. Partial revelation is the whole point of this field: the reader should be able to picture the moment coming and still not know the thing that makes it land — which of them it turns out to be, what the letter says, which way the decision goes. Name the act in full and the chapter has nothing left to deliver.
+    8. ONE SCENE PER RUN, UNCOVERED IN LAYERS: every chapter in a run points at the SAME scene. Do not hunt for a different moment for each chapter. What changes is how much of that one scene you are willing to name — each precap uncovers one more layer than the last. Even the last one before the anchor names only the SETUP — where the moment stands, who is close enough to it to matter, what it turns on — and leaves the act itself to the chapter. "Most of the act, minus one piece" is NOT the target and never was: that is a scene already spent, and the reader who has had it has no reason to open anything. Partial revelation is the whole point of this field: the reader should be able to picture the moment coming and still not know the thing that makes it land — which of them it turns out to be, what the letter says, which way the decision goes, and what any of it costs. Judge every rung by what is LEFT, not by what it gives.
        This is the single most important thing about a run. Three precaps teasing three different moments read as three unrelated teasers. Three precaps circling one moment and tightening read as a story closing in.
-       Write scene_description ONCE for the whole run — identical text in every mapping in it — and put the change in <reveal>:
+       Write scene_description ONCE for the whole run — identical text in every mapping in it — and put the change in <limit>:
        For a run anchored on chapter 8, where the scene is "Devika's own brother stands up in court and reads out the letter she believed she had destroyed":
-         chapter 5 -> 8  reveal: "Say only that something Devika believes is gone will be spoken aloud in front of people who matter. Do not name the letter. Do not say who speaks."
-         chapter 6 -> 8  reveal: "Name the letter and say it survived, and that someone close to her is holding it. Do not name who, and do not say where it surfaces."
-         chapter 7 -> 8  reveal: "Name it: the letter is read out aloud in open court, and the person reading it is someone from her own family. Do not say which of them, what the court does with it, or what it costs her afterwards."
-       Each rung names one thing the rung before it withheld. Nothing is ever un-named or contradicted, and the final reveal still keeps one piece back — it gives the courtroom and the betrayal and withholds the face, because which of them stands up is what chapter 8 exists to deliver.
+         chapter 5 -> 8  limit: "PERMIT: words Devika believed were destroyed will be spoken aloud where she cannot stop it. PROHIBIT: what document holds them, who speaks, the setting, and anything it costs her."
+         chapter 6 -> 8  limit: "PERMIT: the letter survived, and it is already in someone else's hands. PROHIBIT: whose hands, where it comes back out, what it says, and how she takes it."
+         chapter 7 -> 8  limit: "PERMIT: it will be read aloud in front of the people whose judgement she cannot afford, and the hands holding it are not a stranger's. PROHIBIT: who they belong to, what the letter says, what the court does with it, and what it costs her."
+       Each rung names one thing the rung before it withheld. Nothing is ever un-named or contradicted, and notice how much the FINAL rung still keeps: it gives the public room and says the letter is in hands that are not a stranger's, and it holds back who those hands belong to, what the letter says, and what any of it does to her. Three whole things, at the most open rung there is. That is the proportion to aim at — the brother, the contents and the fallout are what chapter 8 exists to deliver, and a limit that hands over two of the three has sold the chapter.
+       BOTH SEGMENTS ARE REQUIRED, ALWAYS, IN THIS ORDER: "PERMIT: ... PROHIBIT: ...". Look at all three above — not one stops after the permission. A limit written as permission alone is a defect, not a loose end: the writer treats this field as the authority that outranks every other rule it has, so a limit that forbids nothing authorises everything. Inside each segment, write plainly and list the items; do not repeat a verb stem row after row, and never write the word "reveal" — the labels already say which side you are on.
+       THE OUTCOME IS NEVER NAMEABLE, AT ANY RUNG, INCLUDING THE LAST. What the act does to anyone, how they react to it, who it changes, what it costs, how it resolves — these are what the chapter exists to deliver and no rung may spend them. Keep them out of the permission half as well: "a level of violence that stuns everyone watching", "proving she is far more dangerous than she appears", "and she is left in tears" all smuggle the outcome into what the writer is told to name. Name the SETUP — who is in it, where it stands, what it turns on — and forbid the rest explicitly.
 
-    8b. NEVER SPEND THE WHOLE SCENE EARLY: in a run of two or more chapters the first reveal is the quietest. If the first precap already names the act, every later one in the run has nothing left and will repeat itself. Check each run from the top: the amount named must only ever increase. (A one-chapter run is the exception — see rule 5.)
+    8b. NEVER SPEND THE WHOLE SCENE EARLY: in a run of two or more chapters the first limit is the quietest. If the first precap already names the act, every later one in the run has nothing left and will repeat itself. Check each run from the top: the amount named must only ever increase. (A one-chapter run is the exception — see rule 5.)
 
     9. DO NOT TEASE WHAT THE READER JUST READ: if the best scene in the window is simply the same event chapter N was already built around, continuing or repeating, pick a different scene. A precap that describes what the reader has just finished reading has no pull.
 
@@ -104,11 +106,11 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
     11. ROTATE THE DOMINANT EMOTION: every precap is an emotional promise, and twenty precaps that all promise the same feeling stop registering. Choose ONE from:
          IDENTITY  FEAR  REVENGE  HOPE  BETRAYAL  SACRIFICE  LOVE  MYSTERY  GUILT  GRIEF  SHAME  LOYALTY  PRIDE  DESPERATION
        Never give the same emotion to two chapters in a row, and never more than twice in any five consecutive chapters. Read your emotion column top to bottom before finishing: if it reads MYSTERY, MYSTERY, MYSTERY, the blueprint is wrong even if each one is individually apt.
-       Chapters inside one anchor run reach for the same scene, so they are the HARDEST place to vary and the most important. One scene can be promised as FEAR (what it will cost her), then BETRAYAL (who is really behind it), then GRIEF (what she loses when it lands). Pick the emotion that fits what THAT chapter's reveal is allowed to name.
+       Chapters inside one anchor run reach for the same scene, so they are the HARDEST place to vary and the most important. One scene can be promised as FEAR (what it will cost her), then BETRAYAL (who is really behind it), then GRIEF (what she loses when it lands). Pick the emotion that fits what THAT chapter's crucial point.
        The emotion is not a label for the scene — it is the feeling the reader should be left holding. Choose it from what the reader has invested in, not from what happens on the page.
 
     12. NAMES STAY IN THE SOURCE SCRIPT — read this even though the rest of this sheet is English. The chapters you are given are usually NOT in English. They may be in Hindi, Malayalam, or another language with its own script.
-       Write the planning fields — scene_description, reveal, bridge_reasoning — as English instructions.
+       Write the planning fields — scene_description, limit, bridge_reasoning — as English instructions.
        BUT every proper noun inside them — character names, nicknames, place names, titles, the name of a specific named object — must be copied CHARACTER FOR CHARACTER from the chapter text, in the chapter's own script. Never transliterate a name into Roman letters, never translate it, never shorten or Anglicise it, and never guess at a spelling.
        If the chapter text says देविका, write देविका — not "Devika", not "Dewika". If it says ദേവിക, write ദേവിക — not "Devika".
        So a correct scene_description for a Hindi chapter looks like:
@@ -144,7 +146,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       <target_chapter_id>7</target_chapter_id>
       <dominant_emotion>FEAR</dominant_emotion>
       <scene_description>Radha realizes the shop was opened from the inside and turns to find her brother-in-law standing in the doorway watching her.</scene_description>
-      <reveal>Say only that the shop is no longer as safe as Radha believes, and that someone close to her already knows more about it than she does. Do not say there is a break-in. Do not name who.</reveal>
+      <limit>Say only that the shop is no longer as safe as Radha believes, and that someone close to her already knows more about it than she does. Do not say there is a break-in. Do not name who.</limit>
       <bridge_reasoning>Chapter 4 ends with Radha refusing her brother-in-law the keys, certain that settles it.</bridge_reasoning>
     </mapping>
     <mapping>
@@ -152,7 +154,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       <target_chapter_id>7</target_chapter_id>
       <dominant_emotion>DESPERATION</dominant_emotion>
       <scene_description>Radha realizes the shop was opened from the inside and turns to find her brother-in-law standing in the doorway watching her.</scene_description>
-      <reveal>Name the break-in and that the week's takings are gone. Do not say it was opened from the inside, and do not point at anyone.</reveal>
+      <limit>Name the break-in and that the week's takings are gone. Do not say it was opened from the inside, and do not point at anyone.</limit>
       <bridge_reasoning>Chapter 5 has her counting those takings and planning what they will cover.</bridge_reasoning>
     </mapping>
     <mapping>
@@ -160,7 +162,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       <target_chapter_id>7</target_chapter_id>
       <dominant_emotion>BETRAYAL</dominant_emotion>
       <scene_description>Radha realizes the shop was opened from the inside and turns to find her brother-in-law standing in the doorway watching her.</scene_description>
-      <reveal>Name it: nothing was forced from outside, and when she turns, the person watching her from the doorway is someone from her own household. Do not say which of them it is, what she does about it, or what it costs her.</reveal>
+      <limit>The lock was never the way in, and she is not alone in the shop when she understands that. Who is standing there, how close to her they are, what she does about it, and what it costs her all stay back.</limit>
       <bridge_reasoning>Chapter 6 has him asking her twice where she keeps the spare key.</bridge_reasoning>
     </mapping>
 
@@ -173,7 +175,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       <target_chapter_id>12</target_chapter_id>
       <dominant_emotion>IDENTITY</dominant_emotion>
       <scene_description>The woman who has been quietly paying Radha's debts walks into the shop and tells her she was her husband's first wife.</scene_description>
-      <reveal>Name it: the woman who has quietly been paying her debts walks into the shop and tells Radha to her face what she was to her husband. Do not say what she turns out to have been, what Radha does, or what it means for the shop.</reveal>
+      <limit>The woman who has quietly been paying her debts walks into the shop and tells Radha to her face what she was to her husband. Do not say what she turns out to have been, what Radha does, or what it means for the shop.</limit>
       <bridge_reasoning>Chapter 11 ends with Radha finding the debts already settled and no name on the receipt.</bridge_reasoning>
     </mapping>
 
@@ -187,7 +189,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
         <chapter_id>1</chapter_id>
         <target_chapter_id>3</target_chapter_id>
         <scene_description>One specific moment inside chapter 3, naming who is in it and what happens. Identical across every mapping in this run.</scene_description>
-        <reveal>How much of that scene this particular precap may name, and what it must still hold back.</reveal>
+        <limit>How much of that scene this particular precap may name, and what it must still keep from the reader.</limit>
         <dominant_emotion>BETRAYAL</dominant_emotion>
         <bridge_reasoning>What in chapter 1 this scene pays off, escalates, or answers.</bridge_reasoning>
       </mapping>
@@ -204,8 +206,10 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       • Every mapping in a run carries the SAME scene_description, word for word.
       • No two consecutive chapters carry the same dominant_emotion, and none appears more than twice in any five consecutive chapters.
       • No target chapter is used by more than {max_target_reuse} chapters.
-      • Each run's reveals only ever open up — never the same amount twice, never narrowing, and in a run of two or more the first one never names the act.
-      • Every run's FINAL reveal still keeps one piece of the act back. This is a check for partial revelation, not for silence — that reveal is meant to name a great deal. Read it on its own and ask whether a reader given only that would still not know the one thing that makes the moment land: which of them it turns out to be, what it says, which way it goes. If they would already know it, the peak has been spent and the chapter has nothing left.
+      • Each run's limits only ever open up — never the same amount twice, never narrowing, and in a run of two or more the first one never names the act.
+      • Every limit, at every rung, carries both a PERMIT: and a PROHIBIT: segment, and the PROHIBIT always rules out the outcome — what the act costs, how anyone reacts to it, how it resolves. A limit that is pure permission is a defect: rewrite it before output.
+      • No limit's PERMIT segment states a consequence. Strip any "...which stuns them", "...proving she is X", "...leaving her in tears" and keep only what can be seen at the moment itself.
+      • Every run's FINAL limit still keeps one piece of the act back. This is a check for partial revelation, not for silence — that limit is meant to name a great deal. Read it on its own and ask whether a reader given only that would still not know the one thing that makes the moment land: which of them it turns out to be, what it says, which way it goes. If they would already know it, the peak has been spent and the chapter has nothing left.
       • Every bridge_reasoning is a concrete fact about its own chapter N — not a trait, a mood, or a justification of the pairing — and the rows differ from each other down a run.
       • Every character, place and named object inside your fields is spelled in the chapter's own script, exactly as the chapter text spells it — no Romanised names anywhere. Fix any that fail, then output.
 

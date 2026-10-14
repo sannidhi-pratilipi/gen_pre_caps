@@ -16,10 +16,11 @@ from pipeline.arc_planning import (
 )
 from pipeline.runner import process_chapter
 
-# SERIES_SLUGS = ["vnustigw45xt", "wxljcrzqxhlj", "loydb6s7xqa5", "rv5i7wqoclxs"]
-SERIES_SLUGS = ["gjrvhkgosiyn", "py1qx8mjfdnf"]
+# SERIES_SLUGS = ["vnustigw45xt", "loydb6s7xqa5", "rv5i7wqoclxs"]
+SERIES_SLUGS=["nxiarydspru9", "rzmjlonhei4x", "5mtf05kjz1l8", "mukeivhakxuw", "w2iz3pb0tait", "ngixsk2ufcva", "ulknumcucepz"]
+# SERIES_SLUGS = ["gjrvhkgosiyn", "py1qx8mjfdnf"]
 # SERIES_SLUGS = ["rpe4jtpbjp5x", "gd08rcgxroxp", "63qaghm3xpbj", "sclk7xgjqn3s", "lb12rsbg841o", "br9xkihju6fq", "vmavpouo002k", "kpgvfdp2zjef", "nxycdihwjddy", "snrbplmnmuar", "kbc51zllbgp7", "mnnuddk33fl7", "yeft3rnee7uj", "stwvivx7wrgu", "7d3glqxwt1py"]
-LANGUAGE = "hi"
+LANGUAGE = "ml"
 NUM_CHAPTERS = 10  # number of hooks to generate (chapters 1..10 by default)
 # How many chapters Pass 1 may read when --scan is not given, matching main.py.
 # The planner reads the whole window in one prompt, so this is what it sees when
@@ -66,9 +67,31 @@ OUTPUT_ROOT = Path("output-latest-rq")
 _MAPPING_RE = re.compile(r"<mapping>.*?</mapping>", re.S)
 _CHAPTER_ID_RE = re.compile(r"(<(?:target_)?chapter_id>)\s*(\d+)\s*(</(?:target_)?chapter_id>)")
 
+# The planner's prose fields, which talk about chapters in words as well as in
+# tags. bridge_reasoning is written as "Chapter N ends with ..." by instruction,
+# so it carries a window-local number in every row; the other two are included
+# because nothing stops the planner mentioning a chapter in them either.
+_PROSE_FIELDS = ("scene_description", "limit", "bridge_reasoning")
+_PROSE_RE = re.compile(
+    r"(<(?:" + "|".join(_PROSE_FIELDS) + r")>)(.*?)(</(?:" + "|".join(_PROSE_FIELDS) + r")>)",
+    re.S,
+)
+# "Chapter 8", "chapter 8", "Ch. 8" — the window-local number as the planner
+# wrote it. Bounded on the right so "Chapter 8" does not match inside "Chapter 18".
+_PROSE_CHAPTER_RE = re.compile(r"\b([Cc]h(?:apter|\.)?\s+)(\d+)\b")
+
 
 def renumber_blueprint(xml, offset):
-    """Shift every chapter_id and target_chapter_id in a raw planner response.
+    """Shift every chapter reference in a raw planner response.
+
+    Both the chapter_id/target_chapter_id tags AND the chapter numbers written
+    into the prose fields. The planner always answers in the numbering of the
+    window it was shown (_format_chapters_block labels every window from 1), so
+    a plan over series chapters 11-25 comes back calling series 18 "Chapter 8" —
+    in the tags and in bridge_reasoning alike. Shifting only the tags leaves
+    every bridge_reasoning in the file pointing at a chapter ten short of the
+    one it actually describes, and that note is handed to the hook writer as
+    the anchor it must put into the precap.
 
     Textual rather than parse-and-rebuild, so the file stays the planner's own
     output — including any row whose XML was malformed enough that the parser
@@ -76,8 +99,16 @@ def renumber_blueprint(xml, offset):
     parsed mappings would silently drop those."""
     if not offset:
         return xml
-    return _CHAPTER_ID_RE.sub(
+    xml = _CHAPTER_ID_RE.sub(
         lambda m: f"{m.group(1)}{int(m.group(2)) + offset}{m.group(3)}", xml
+    )
+    return _PROSE_RE.sub(
+        lambda m: m.group(1)
+        + _PROSE_CHAPTER_RE.sub(
+            lambda c: f"{c.group(1)}{int(c.group(2)) + offset}", m.group(2)
+        )
+        + m.group(3),
+        xml,
     )
 
 
@@ -300,7 +331,7 @@ def generate_sequentially(series_slug, mappings, chapters, language, existing_ho
                     target_chapter_text=chapters[mapping.target_chapter - 1],
                     mapping=mapping,
                     language=language,
-                    previous_reveal=previous_mapping.reveal if same_run else None,
+                    previous_limit=previous_mapping.limit if same_run else None,
                     same_scene_precaps=list(run_precaps),
                     recent_precaps=list(recent_precaps),
                     run_id=run_id,
