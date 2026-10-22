@@ -4,31 +4,19 @@ from collections import Counter
 from dataclasses import dataclass, replace
 
 from llm.tfy_client import complete
-from prompts.arc_prompt import build_blueprint_prompt
+from prompts.arc_prompt import ALL_EMOTION_LABELS, build_blueprint_prompt
 
-# At most this many chapters may aim at one target chapter.
-MAX_TARGET_REUSE = 4
-
-# How far ahead of chapter N a precap is allowed to reach: the target chapter K
-# must satisfy N < K <= N + LOOKAHEAD.
-#
-# This equals MAX_TARGET_REUSE, and not by coincidence. Under the sticky-anchor
-# rule a run anchored on K and starting at chapter A covers chapters A..K-1, so
-# the run's length IS the first chapter's distance. A lookahead wider than the
-# reuse cap could only ever produce runs that the cap then rejects.
-LOOKAHEAD = MAX_TARGET_REUSE
+# How far ahead of chapter N a precap may reach: the target chapter K must satisfy
+# N < K <= N + LOOKAHEAD. It is also the most chapters that may aim at one target
+# (the default for max_target_reuse below): under the sticky-anchor rule a run
+# anchored on K covers chapters A..K-1, so its length is the first chapter's distance.
+LOOKAHEAD = 4
 
 # The feeling a precap is built to land. Planned per chapter rather than left to
 # generation, because "don't repeat the last one's emotion" is a constraint
 # across chapters and Pass 2 only ever sees one. Anything outside this set is
 # dropped to "" so a mis-spelled label cannot silently become the instruction.
-EMOTIONS = {
-    "IDENTITY", "FEAR", "REVENGE", "HOPE", "BETRAYAL", "SACRIFICE",
-    "LOVE", "MYSTERY", "GUILT", "GRIEF", "SHAME", "LOYALTY", "PRIDE", "DESPERATION",
-    # romance-only (prompts/arc_prompt.py::ROMANCE_EMOTIONS)
-    "LONGING", "DESIRE", "INTIMACY", "JEALOUSY", "TENDERNESS", "HEARTBREAK", "TRUST",
-    "VULNERABILITY", "PROTECTIVENESS", "POSSESSIVENESS",
-}
+EMOTIONS = ALL_EMOTION_LABELS
 
 
 @dataclass
@@ -188,7 +176,7 @@ def enforce_constraints(
     chapter_count: int,
     lookahead: int = LOOKAHEAD,
     precap_limit: int | None = None,
-    max_target_reuse: int = MAX_TARGET_REUSE,
+    max_target_reuse: int = LOOKAHEAD,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
     """The window, anchor and monotonicity rules are instructions in the Pass 1
     prompt, so the model can violate them. Re-check every mapping here rather
@@ -324,7 +312,7 @@ def blueprint_from_xml(
     chapter_count: int,
     lookahead: int = LOOKAHEAD,
     precap_limit: int | None = None,
-    max_target_reuse: int = MAX_TARGET_REUSE,
+    max_target_reuse: int = LOOKAHEAD,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
     """Turn a blueprint XML into mappings, without calling the planner.
 
@@ -348,7 +336,7 @@ def plan_precaps(
     language: str | None = None,
     lookahead: int = LOOKAHEAD,
     precap_limit: int | None = None,
-    max_target_reuse: int = MAX_TARGET_REUSE,
+    max_target_reuse: int = LOOKAHEAD,
     run_id: str | None = None,
     genre: str | None = None,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]], str]:

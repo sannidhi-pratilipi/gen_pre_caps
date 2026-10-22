@@ -1,4 +1,6 @@
 from prompts.genre.romance.arc_planner import (
+    ROMANCE_EMOTION_EXAMPLES,
+    ROMANCE_EMOTION_LABELS,
     ROMANCE_EMOTIONS,
     ROMANCE_EVENT_TYPES,
     ROMANCE_RANKING_NOTE,
@@ -66,7 +68,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
 
     3. HORIZON SHIFT ONLY AFTER PAYOFF: the target may only increase on a chapter that has reached or passed the previous anchor. The result is a run of anchors, each held until it lands: 1,2,3 -> 4, then 4,5,6 -> 7, then 7,8 -> 9, and so on. The target never moves backward.
 
-    4. AT MOST {max_target_reuse} CHAPTERS PER TARGET: no more than {max_target_reuse} chapters may aim at the same target chapter. A fourth one pointing at it is rejected outright.
+    4. AT MOST {max_target_reuse} CHAPTERS PER TARGET: no more than {max_target_reuse} chapters may aim at the same target chapter. Any more than that pointing at it is rejected outright.
        Every chapter you picked out in step 4 must appear as a target_chapter_id somewhere. If one does not, you have let the staircase drift past the story's own peak — go back and re-plan backward from it.
        Because rule 2 makes every chapter from an anchor's first use up to K-1 carry that same K, the run's length is exactly the distance the FIRST chapter of the run reaches. So this cap and the window in rule 1 are the same limit seen from two sides: when you start a new anchor, never pick a K more than {max_target_reuse} chapters out, or you have committed more chapters to it than are allowed.
 
@@ -109,8 +111,8 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
 
     11. ROTATE THE DOMINANT EMOTION: every precap is an emotional promise, and twenty precaps that all promise the same feeling stop registering. Choose ONE from:
 {emotions_block}
-       Never give the same emotion to two chapters in a row, and never more than twice in any five consecutive chapters. Read your emotion column top to bottom before finishing: if it reads MYSTERY, MYSTERY, MYSTERY, the blueprint is wrong even if each one is individually apt.
-       Chapters inside one anchor run reach for the same scene, so they are the HARDEST place to vary and the most important. One scene can be promised as FEAR (what it will cost her), then BETRAYAL (who is really behind it), then GRIEF (what she loses when it lands). Pick the emotion that fits what THAT chapter's crucial point.
+       Never give the same emotion to two chapters in a row, and never more than twice in any five consecutive chapters. Read your emotion column top to bottom before finishing: if it reads {emotion_repeat_example}, the blueprint is wrong even if each one is individually apt.
+       Chapters inside one anchor run reach for the same scene, so they are the HARDEST place to vary and the most important. One scene can be promised as {emotion_run_example}. Pick the emotion that fits what THAT chapter's crucial point.
        The emotion is not a label for the scene — it is the feeling the reader should be left holding. Choose it from what the reader has invested in, not from what happens on the page.
 
     12. NAMES STAY IN THE SOURCE SCRIPT — read this even though the rest of this sheet is English. The chapters you are given are usually NOT in English. They may be in Hindi, Malayalam, or another language with its own script.
@@ -151,7 +153,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
     <mapping>
       <chapter_id>4</chapter_id>
       <target_chapter_id>7</target_chapter_id>
-      <dominant_emotion>FEAR</dominant_emotion>
+      <dominant_emotion>{emotion_example_1}</dominant_emotion>
       <scene_description>Radha realizes the shop was opened from the inside and turns to find her brother-in-law standing in the doorway watching her.</scene_description>
       <limit>Say only that the shop is no longer as safe as Radha believes, and that someone close to her already knows more about it than she does. Do not say there is a break-in. Do not name who.</limit>
       <bridge_reasoning>Chapter 4 ends with Radha refusing her brother-in-law the keys, certain that settles it.</bridge_reasoning>
@@ -159,7 +161,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
     <mapping>
       <chapter_id>5</chapter_id>
       <target_chapter_id>7</target_chapter_id>
-      <dominant_emotion>DESPERATION</dominant_emotion>
+      <dominant_emotion>{emotion_example_2}</dominant_emotion>
       <scene_description>Radha realizes the shop was opened from the inside and turns to find her brother-in-law standing in the doorway watching her.</scene_description>
       <limit>Name the break-in and that the week's takings are gone. Do not say it was opened from the inside, and do not point at anyone.</limit>
       <bridge_reasoning>Chapter 5 has her counting those takings and planning what they will cover.</bridge_reasoning>
@@ -167,7 +169,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
     <mapping>
       <chapter_id>6</chapter_id>
       <target_chapter_id>7</target_chapter_id>
-      <dominant_emotion>BETRAYAL</dominant_emotion>
+      <dominant_emotion>{emotion_example_3}</dominant_emotion>
       <scene_description>Radha realizes the shop was opened from the inside and turns to find her brother-in-law standing in the doorway watching her.</scene_description>
       <limit>The lock was never the way in, and she is not alone in the shop when she understands that. Who is standing there, how close to her they are, what she does about it, and what it costs her all stay back.</limit>
       <bridge_reasoning>Chapter 6 has him asking her twice where she keeps the spare key.</bridge_reasoning>
@@ -180,7 +182,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
     <mapping>
       <chapter_id>11</chapter_id>
       <target_chapter_id>12</target_chapter_id>
-      <dominant_emotion>IDENTITY</dominant_emotion>
+      <dominant_emotion>{emotion_example_4}</dominant_emotion>
       <scene_description>The woman who has been quietly paying Radha's debts walks into the shop and tells her she was her husband's first wife.</scene_description>
       <limit>The woman who has quietly been paying her debts walks into the shop and tells Radha to her face what she was to her husband. Do not say what she turns out to have been, what Radha does, or what it means for the shop.</limit>
       <bridge_reasoning>Chapter 11 ends with Radha finding the debts already settled and no name on the receipt.</bridge_reasoning>
@@ -198,7 +200,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
         <target_chapter_id>3</target_chapter_id>
         <scene_description>One specific moment inside chapter 3, naming who is in it and what happens. Identical across every mapping in this run.</scene_description>
         <limit>How much of that scene this particular precap may name, and what it must still keep from the reader.</limit>
-        <dominant_emotion>BETRAYAL</dominant_emotion>
+        <dominant_emotion>{emotion_example_5}</dominant_emotion>
         <bridge_reasoning>What in chapter 1 this scene pays off, escalates, or answers.</bridge_reasoning>
       </mapping>
       <!-- exactly {precap_limit} mappings: one per chapter for chapters 1 to {precap_limit}, in ascending order -->
@@ -254,10 +256,29 @@ GENRE_EVENT_TYPES = {
 # ────────────────────
 # Same drop-in pattern as the peak types: one list is active per blueprint call.
 # A romance serial's precaps must all land a feeling about love, so its list
-# holds only love-related feelings. Every label here must also be in
-# pipeline/arc_planning.py::EMOTIONS, or it is dropped when the blueprint is read.
+# holds only love-related feelings. The labels live as lists next to their prompt
+# text (here and in each prompts/genre/<genre>/arc_planner.py); ALL_EMOTION_LABELS
+# below is built from them and is what pipeline/arc_planning.py accepts when it
+# reads a blueprint, so adding a label in one place is enough.
 
-DEFAULT_EMOTIONS = "         IDENTITY  FEAR  REVENGE  HOPE  BETRAYAL  SACRIFICE  LOVE  MYSTERY  GUILT  GRIEF  SHAME  LOYALTY  PRIDE  DESPERATION"
+DEFAULT_EMOTION_LABELS = [
+    "IDENTITY",
+    "FEAR",
+    "REVENGE",
+    "HOPE",
+    "BETRAYAL",
+    "SACRIFICE",
+    "LOVE",
+    "MYSTERY",
+    "GUILT",
+    "GRIEF",
+    "SHAME",
+    "LOYALTY",
+    "PRIDE",
+    "DESPERATION",
+]
+
+DEFAULT_EMOTIONS = "         " + "  ".join(DEFAULT_EMOTION_LABELS)
 
 # ────────────────────
 # GENRE-SPECIFIC RANKING NOTE
@@ -274,6 +295,26 @@ GENRE_EMOTIONS = {
     "romance": ROMANCE_EMOTIONS,
 }
 
+GENRE_EMOTION_LABELS = {
+    "romance": ROMANCE_EMOTION_LABELS,
+}
+
+# Emotion names that appear in the prompt's own examples (the repeated-emotion warning,
+# the one-scene-three-emotions illustration and the <dominant_emotion> tags in the worked
+# examples). A genre swaps these for its own labels so that no label outside the active
+# set appears anywhere in the prompt.
+DEFAULT_EMOTION_EXAMPLES = {
+    "repeat": "MYSTERY, MYSTERY, MYSTERY",
+    "run": "FEAR (what it will cost her), then BETRAYAL (who is really behind it), then GRIEF (what she loses when it lands)",
+    "tags": ["FEAR", "DESPERATION", "BETRAYAL", "IDENTITY", "BETRAYAL"],
+}
+
+GENRE_EMOTION_EXAMPLES = {
+    "romance": ROMANCE_EMOTION_EXAMPLES,
+}
+
+ALL_EMOTION_LABELS = frozenset(DEFAULT_EMOTION_LABELS).union(*GENRE_EMOTION_LABELS.values())
+
 
 def build_blueprint_prompt(
     lookahead: int,
@@ -285,12 +326,18 @@ def build_blueprint_prompt(
     event_types_block = GENRE_EVENT_TYPES.get((genre or "").lower(), DEFAULT_EVENT_TYPES)
     emotions_block = GENRE_EMOTIONS.get((genre or "").lower(), DEFAULT_EMOTIONS)
     ranking_note_block = GENRE_RANKING_NOTES.get((genre or "").lower(), DEFAULT_RANKING_NOTE)
+    examples = GENRE_EMOTION_EXAMPLES.get((genre or "").lower(), DEFAULT_EMOTION_EXAMPLES)
+    prompt = PRECAP_BLUEPRINT_SYSTEM_PROMPT
+    for n, tag in enumerate(examples["tags"], start=1):
+        prompt = prompt.replace(f"{{emotion_example_{n}}}", tag)
     return (
-        PRECAP_BLUEPRINT_SYSTEM_PROMPT.replace("{lookahead}", str(lookahead))
+        prompt.replace("{lookahead}", str(lookahead))
         .replace("{precap_limit}", str(precap_limit))
         .replace("{chapter_count}", str(chapter_count))
         .replace("{max_target_reuse}", str(max_target_reuse))
         .replace("{event_types_block}", event_types_block)
         .replace("{emotions_block}", emotions_block)
+        .replace("{emotion_repeat_example}", examples["repeat"])
+        .replace("{emotion_run_example}", examples["run"])
         .replace("{ranking_note_block}", ranking_note_block)
     )

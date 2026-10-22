@@ -11,7 +11,29 @@ ROMANCE_EVENT_TYPES = """
        • LIFE-UPENDED: their lives are about to change completely or stop being normal — a marriage, a contract, a move, a pregnancy, a family decision, a truth that can't be taken back
        These names are a prompt, not a boundary. Anything that closes the distance between the leads, threatens to widen it, puts either of them in danger, shifts what one of them feels, or resets the terms of their life together is a peak worth taking even if it fits none of them. A romance serial's peaks are almost always about what is happening BETWEEN the two leads, even in a chapter with no villain and no plot event at all — a long silence, a held glance, or a chance not taken is still a peak if it moves the distance between them."""
 
-ROMANCE_EMOTIONS = """LOVE  LONGING  DESIRE  INTIMACY  JEALOUSY  TENDERNESS  HEARTBREAK  TRUST  VULNERABILITY  PROTECTIVENESS  POSSESSIVENESS
+ROMANCE_EMOTION_LABELS = [
+    "LOVE",
+    "LONGING",
+    "DESIRE",
+    "INTIMACY",
+    "JEALOUSY",
+    "TENDERNESS",
+    "HEARTBREAK",
+    "TRUST",
+    "VULNERABILITY",
+    "PROTECTIVENESS",
+    "POSSESSIVENESS",
+]
+
+# The emotion names the blueprint prompt's own examples use, in romance terms, so the
+# romance prompt never mentions a label that is not in ROMANCE_EMOTION_LABELS.
+ROMANCE_EMOTION_EXAMPLES = {
+    "repeat": "LONGING, LONGING, LONGING",
+    "run": "VULNERABILITY (what it will cost her), then TRUST (who is really behind it), then HEARTBREAK (what she loses when it lands)",
+    "tags": ["VULNERABILITY", "LONGING", "TRUST", "JEALOUSY", "TRUST"],
+}
+
+ROMANCE_EMOTIONS = "  ".join(ROMANCE_EMOTION_LABELS) + """
        Every one of these is a feeling about the two leads and what is between them. Choose only from this list. Do not use FEAR, REVENGE, BETRAYAL, MYSTERY, SHAME, PRIDE or any other label that is not about love, even when the scene is a danger or a secret: promise the love feeling that scene puts at risk (a danger scene is PROTECTIVENESS or HEARTBREAK, a secret is TRUST, a rival is JEALOUSY)."""
 
 ROMANCE_RANKING_NOTE = """
