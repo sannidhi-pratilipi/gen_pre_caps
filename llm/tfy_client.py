@@ -11,7 +11,7 @@ from openai import BadRequestError, OpenAI, RateLimitError
 load_dotenv()
 
 # MODEL = "openai/gpt-5.4-nano"
-MODEL = "google-vertex-marketing/gemini-3-flash-preview"
+MODEL = "google-vertex/google-gemini-3.8-flash"
 # MODEL="openai/gpt-5.6-luna"
 FALLBACK_MODEL = "openai/gpt-5-mini"
 
@@ -34,7 +34,7 @@ def get_tfy_chat_client(
     headers = {
         "X-TFY-METADATA": json.dumps(tfy_metadata),
         "X-TFY-LOGGING-CONFIG": json.dumps({"enabled": True}),
-        "X-TFY-CACHE-CONFIG": json.dumps({"type": "exact-match", "ttl": 259200}),
+        # "X-TFY-CACHE-CONFIG": json.dumps({"type": "exact-match", "ttl": 259200}),
     }
     kwargs = dict(
         api_key=os.environ["TFY_API_KEY"],
@@ -72,7 +72,7 @@ def _make_headers(extra_metadata: dict | None = None) -> dict:
     return {
         "X-TFY-METADATA": json.dumps(tfy_metadata),
         "X-TFY-LOGGING-CONFIG": json.dumps({"enabled": True}),
-        "X-TFY-CACHE-CONFIG": json.dumps({"type": "exact-match", "ttl": 259200}),
+        # "X-TFY-CACHE-CONFIG": json.dumps({"type": "exact-match", "ttl": 259200}),
     }
 
 

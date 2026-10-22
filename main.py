@@ -58,6 +58,10 @@ def parse_args(argv=None):
     parser.add_argument("-s", "--series", default="gjrvhkgosiyn", help="series slug")
     parser.add_argument("-l", "--language", default="ml", help="language code, e.g. hi or ml")
     parser.add_argument(
+        "-g", "--genre", default=None,
+        help="genre, e.g. romance — swaps the peak-event vocabulary and hook-writing guidance for that genre (default: the generic rules)",
+    )
+    parser.add_argument(
         "--precap-limit", type=int, default=PRECAP_LIMIT,
         help=f"generate precaps for chapters 1..N (default {PRECAP_LIMIT})",
     )
@@ -76,6 +80,7 @@ def main(argv=None):
     args = parse_args(argv)
     series_slug = args.series
     language = args.language
+    genre = args.genre
     precap_limit = args.precap_limit
     chapter_limit = args.chapter_limit
     ingestor = ChapterIngestor()
@@ -123,7 +128,8 @@ def main(argv=None):
     if blueprint_xml is None:
         try:
             mappings, rejected, blueprint_xml = plan_precaps(
-                chapters, language=language, lookahead=LOOKAHEAD, precap_limit=precap_limit
+                chapters, language=language, lookahead=LOOKAHEAD, precap_limit=precap_limit,
+                genre=genre,
             )
         except BlueprintParseError as e:
             # the planning call is expensive; keep what came back so it can be read
@@ -183,6 +189,7 @@ def main(argv=None):
                 previous_limit=previous_mapping.limit if same_run else None,
                 same_scene_precaps=list(run_precaps),
                 recent_precaps=list(recent_precaps),
+                genre=genre,
             )
         except Exception as e:
             # one failure must not stop the chain — the next chapter simply

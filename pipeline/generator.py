@@ -27,10 +27,11 @@ def generate_hook(
     previous_limit: str | None = None,
     same_scene_precaps: list[str] | None = None,
     recent_precaps: list[str] | None = None,
+    genre: str | None = None,
 ) -> str:
     bridge_context = build_bridge_context(mapping, previous_limit, same_scene_precaps, recent_precaps)
     messages = [
-        {"role": "system", "content": build_hook_prompt(language)},
+        {"role": "system", "content": build_hook_prompt(language, genre)},
         {
             "role": "user",
             "content": _chapter_content(chapter_read_text, target_chapter_text, mapping, bridge_context),
@@ -86,10 +87,11 @@ def rewrite_hook(
     previous_limit: str | None = None,
     same_scene_precaps: list[str] | None = None,
     recent_precaps: list[str] | None = None,
+    genre: str | None = None,
 ) -> str:
     bridge_context = build_bridge_context(mapping, previous_limit, same_scene_precaps, recent_precaps)
     messages = [
-        {"role": "system", "content": build_hook_prompt(language)},
+        {"role": "system", "content": build_hook_prompt(language, genre)},
         {
             "role": "user",
             "content": _chapter_content(chapter_read_text, target_chapter_text, mapping, bridge_context),

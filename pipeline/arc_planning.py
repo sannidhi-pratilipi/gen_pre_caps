@@ -7,7 +7,7 @@ from llm.tfy_client import complete
 from prompts.arc_prompt import build_blueprint_prompt
 
 # At most this many chapters may aim at one target chapter.
-MAX_TARGET_REUSE = 3
+MAX_TARGET_REUSE = 4
 
 # How far ahead of chapter N a precap is allowed to reach: the target chapter K
 # must satisfy N < K <= N + LOOKAHEAD.
@@ -25,6 +25,9 @@ LOOKAHEAD = MAX_TARGET_REUSE
 EMOTIONS = {
     "IDENTITY", "FEAR", "REVENGE", "HOPE", "BETRAYAL", "SACRIFICE",
     "LOVE", "MYSTERY", "GUILT", "GRIEF", "SHAME", "LOYALTY", "PRIDE", "DESPERATION",
+    # romance-only (prompts/arc_prompt.py::ROMANCE_EMOTIONS)
+    "LONGING", "DESIRE", "INTIMACY", "JEALOUSY", "TENDERNESS", "HEARTBREAK", "TRUST",
+    "VULNERABILITY", "PROTECTIVENESS", "POSSESSIVENESS",
 }
 
 
@@ -199,6 +202,13 @@ def enforce_constraints(
     own setup. Enforcing it here rather than only in the prompt means a single
     stray target cannot desync the whole run behind it.
 
+    ONE-CHAPTER GRACE: the one exception is a chapter exactly one short of the
+    anchor (anchor - n == 1) that names a different target — a near-miss the
+    model drifts into often enough to be worth tolerating. It is treated as an
+    early release rather than a rejection: the old anchor's final chapter loses
+    its own precap, and the new target starts its own run from here. Any larger
+    gap still rejects as before.
+
     A mapping is rejected — not repaired — when it breaks a rule: its
     scene_description describes a scene in the target chapter it named, so
     rewriting the target to a legal value would leave the scene pointing at the
@@ -246,13 +256,14 @@ def enforce_constraints(
             continue
 
         k = mapping.target_chapter
+        early_release = anchor is not None and k != anchor and anchor - n == 1  # one-chapter grace, see docstring
         if k <= n:
             reason = f"target {k} is not ahead of chapter {n}"
         elif k > n + lookahead:
             reason = f"target {k} is beyond the {lookahead}-chapter lookahead window"
         elif k > chapter_count:
             reason = f"target {k} is past the last chapter fetched ({chapter_count})"
-        elif anchor is not None and k != anchor:
+        elif anchor is not None and k != anchor and not early_release:
             reason = (
                 f"jumps to {k} while chapter {anchor} is still promised and unreached — "
                 f"the anchor holds until chapter {anchor}"
@@ -267,7 +278,7 @@ def enforce_constraints(
                 f"target {k} is already used by {max_target_reuse} chapters, the most allowed"
             )
         else:
-            if anchor is None:
+            if anchor is None or early_release:
                 anchor = k
                 anchor_scene = mapping.scene_description
             elif mapping.scene_description != anchor_scene:
@@ -339,6 +350,7 @@ def plan_precaps(
     precap_limit: int | None = None,
     max_target_reuse: int = MAX_TARGET_REUSE,
     run_id: str | None = None,
+    genre: str | None = None,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]], str]:
     """Pass 1: one LLM call over the full chapter text (no summarization step —
     the planner reads the chapters themselves) that maps every chapter N to a
@@ -347,6 +359,10 @@ def plan_precaps(
     Because the whole blueprint comes back in a single response, the planner
     sees every chapter at once and can pace the targets and the emotions across
     the series — neither of which a per-chapter call could do.
+
+    `genre` swaps out the peak-event vocabulary in the prompt (see
+    prompts/arc_prompt.py::GENRE_EVENT_TYPES) — it does not change any of the
+    structural rules (anchors, lookahead, limits), only what counts as a peak.
 
     Returns the kept mappings, the rejections, and the planner's raw response
     so the caller can persist the blueprint XML alongside the hooks."""
@@ -359,7 +375,7 @@ def plan_precaps(
         {
             "role": "system",
             "content": build_blueprint_prompt(
-                lookahead, precap_limit, chapter_count, max_target_reuse
+                lookahead, precap_limit, chapter_count, max_target_reuse, genre
             ),
         },
         {"role": "user", "content": _format_chapters_block(chapters)},
