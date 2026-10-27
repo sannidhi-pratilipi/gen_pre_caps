@@ -49,6 +49,7 @@ def critique_hook(
     language: str | None = None,
     same_scene_precaps: list[str] | None = None,
     recent_precaps: list[str] | None = None,
+    genre: str | None = None,
 ) -> tuple[bool, str]:
     # The predecessors go in as their own block rather than through
     # build_bridge_context: that one is written at the hook's author ("yours must
@@ -61,7 +62,9 @@ def critique_hook(
     messages = [
         {
             "role": "system",
-            "content": build_critique_prompt(language, has_predecessors=bool(predecessors)),
+            "content": build_critique_prompt(
+                language, has_predecessors=bool(predecessors), genre=genre
+            ),
         },
         {"role": "user", "content": f"{content}{predecessors}\n\nHook to evaluate:\n{hook}"},
     ]

@@ -42,3 +42,37 @@ ROMANCE_RANKING_NOTE = """
        DO NOT skip an intimacy scene because the chapters before it hold strong events. No matter how good the events in between are, the intimacy scene wins.
        When an intimacy scene and another strong peak sit in the same lookahead window, anchor on the intimacy scene.
        When several intimacy scenes are in the window, rank all of them above every non-intimacy peak."""
+
+# ────────────────────
+# ROMANCE OPENING RUN
+# ────────────────────
+# Dropped into {opening_run_note} in PRECAP_BLUEPRINT_SYSTEM_PROMPT, right after
+# rule 1 (LOOKAHEAD WINDOW). Only the very first run of the story gets this —
+# see pipeline/arc_planning.py::enforce_constraints, exempt_first_run.
+
+ROMANCE_OPENING_RUN_NOTE = """
+       ROMANCE OPENING RUN: the run starting at chapter 1 is exempt from the {lookahead}-chapter window. Search ALL given chapters for the leads' first or peak intimate or closeness moment and anchor chapter 1 on it, however far out it is. Hold every chapter up to it on that same anchor — sticky anchor still applies — until the reader reaches it; after that, the ordinary window and target-reuse cap return for every later run.
+       Its final limit may also permit a glimpse of the beat right after the moment, never the moment's own outcome. Each rung's bridge_reasoning should stand on whatever is freshest in its own chapter N, not one fact repeated down the whole run.
+"""
+
+# ────────────────────
+# ROMANCE INTIMACY RUNS
+# ────────────────────
+# Dropped into {intimacy_run_note} in PRECAP_BLUEPRINT_SYSTEM_PROMPT, right
+# after rule 8b. Narrow exception to rules 8/8b: only for an INTIMACY &
+# CLOSENESS peak built of a sequence of beats, never any other peak type.
+
+ROMANCE_INTIMACY_RUN_NOTE = """
+       ROMANCE INTIMACY RUNS (exception to 8/8b): when the scene is an INTIMACY & CLOSENESS peak made of a sequence of distinct beats (a look, a touch, an embrace, a kiss, a whispered line), break it into those beats and give the run one beat per rung, in the order they actually happen. The FIRST rung of the run already names its own beat as happening, not as approaching — it is not a threshold-only tease. Each later rung moves on to the NEXT beat in that same order: never repeat a beat already named, and never jump ahead to a later beat before the one before it has had its own rung. If the scene genuinely has only one beat and cannot be broken up this way, anchor it as a one-chapter run instead (rule 5) and name that one beat plainly. What must still stay back at every rung, including the last, is what the closeness means to them afterward: any change in a feeling, a resolve, or what happens next between them. Only INTIMACY & CLOSENESS peaks get this; every other peak type still holds the act back per 8/8b.
+"""
+
+# ────────────────────
+# ROMANCE UNKNOWN LEAD
+# ────────────────────
+# Dropped into {unknown_lead_note} in PRECAP_BLUEPRINT_SYSTEM_PROMPT, at the end
+# of rule 7 (the reader's-knowledge rule). Narrow exception: only the two leads,
+# never a side character.
+
+ROMANCE_UNKNOWN_LEAD_NOTE = """
+       ROMANCE EXCEPTION: the ban above is for side characters only. If the person missing from chapter N is the OTHER LEAD, do not drop the scene — write scene_description and bridge_reasoning with that lead's real name as usual, the same way across the whole run. Do not mark this in scene_description itself: it must stay identical for every chapter in the run, and whether this lead is known yet is a per-chapter fact the hook writer checks directly against chapter N's own text, not something planned here. Side characters stay fully out, as above.
+"""

@@ -62,6 +62,7 @@ def process_chapter(
                 language=language,
                 same_scene_precaps=same_scene_precaps,
                 recent_precaps=recent_precaps,
+                genre=genre,
             )
         if passes:
             break

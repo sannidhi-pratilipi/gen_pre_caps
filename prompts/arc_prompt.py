@@ -3,7 +3,10 @@ from prompts.genre.romance.arc_planner import (
     ROMANCE_EMOTION_LABELS,
     ROMANCE_EMOTIONS,
     ROMANCE_EVENT_TYPES,
+    ROMANCE_INTIMACY_RUN_NOTE,
+    ROMANCE_OPENING_RUN_NOTE,
     ROMANCE_RANKING_NOTE,
+    ROMANCE_UNKNOWN_LEAD_NOTE,
 )
 
 # Pass 1 of the precap pipeline: a single planning call over the full run of
@@ -61,6 +64,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
     ────────────────────
 
     1. LOOKAHEAD WINDOW: the target must satisfy N < K <= N + {lookahead}, and K must be a chapter whose text you were actually given (so K is at most {chapter_count}). Never target a chapter outside the text you received, and never target chapter N itself or anything before it. Targets MAY and often should land above {precap_limit} — those chapters exist to be aimed at, even though they never get a mapping of their own.
+{opening_run_note}
 
     2. STICKY ANCHOR — THE MOST IMPORTANT RULE: a precap is a promise. When chapter A points at chapter K, the reader starts waiting for chapter K. You must therefore keep pointing at K from EVERY chapter from A up to K-1. Only once the reader has actually reached K may the target move on.
        Concretely: if chapter 1 targets chapter 4, then chapter 2 targets 4 and chapter 3 targets 4. Chapter 4 is the first chapter allowed to pick a new anchor.
@@ -87,6 +91,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
          GOOD: "Radha is about to learn that the debts she has been killing herself to pay were settled months ago, and not by her." The arrival is teased through the debts the reader has watched her struggle with, the stranger is never pointed at, and the sentence stands entirely on the person the reader has already spent chapters with.
 
        Only drop a scene when there is genuinely no thread from chapter N to it at all.
+{unknown_lead_note}
 
     8. ONE SCENE PER RUN, UNCOVERED IN LAYERS: every chapter in a run points at the SAME scene. Do not hunt for a different moment for each chapter. What changes is how much of that one scene you are willing to name — each precap uncovers one more layer than the last. Even the last one before the anchor names only the SETUP — where the moment stands, who is close enough to it to matter, what it turns on — and leaves the act itself to the chapter. "Most of the act, minus one piece" is NOT the target and never was: that is a scene already spent, and the reader who has had it has no reason to open anything. Partial revelation is the whole point of this field: the reader should be able to picture the moment coming and still not know the thing that makes it land — which of them it turns out to be, what the letter says, which way the decision goes, and what any of it costs. Judge every rung by what is LEFT, not by what it gives.
        This is the single most important thing about a run. Three precaps teasing three different moments read as three unrelated teasers. Three precaps circling one moment and tightening read as a story closing in.
@@ -100,7 +105,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
        THE OUTCOME IS NEVER NAMEABLE, AT ANY RUNG, INCLUDING THE LAST. What the act does to anyone, how they react to it, who it changes, what it costs, how it resolves — these are what the chapter exists to deliver and no rung may spend them. Keep them out of the permission half as well: "a level of violence that stuns everyone watching", "proving she is far more dangerous than she appears", "and she is left in tears" all smuggle the outcome into what the writer is told to name. Name the SETUP — who is in it, where it stands, what it turns on — and forbid the rest explicitly.
 
     8b. NEVER SPEND THE WHOLE SCENE EARLY: in a run of two or more chapters the first limit is the quietest. If the first precap already names the act, every later one in the run has nothing left and will repeat itself. Check each run from the top: the amount named must only ever increase. (A one-chapter run is the exception — see rule 5.)
-
+{intimacy_run_note}
     9. DO NOT TEASE WHAT THE READER JUST READ: if the best scene in the window is simply the same event chapter N was already built around, continuing or repeating, pick a different scene. A precap that describes what the reader has just finished reading has no pull.
 
     10. ONE CONCRETE SCENE, AND IT IS THE TARGET'S PEAK: scene_description must name a single specific moment — who is in it and what actually happens — in 1 to 2 sentences. Never a theme, never a mood, never a summary of the whole chapter. It must be the peak event you identified for chapter K in step 2, carried over as the same sentence. If you find yourself wanting to tease something else from chapter K, either that other moment was the real peak — so use it — or chapter K is the wrong anchor.
@@ -212,15 +217,15 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       • Every peak you picked out in step 4 is used as a target_chapter_id. This is the check that most often fails — if a peak is missing, the blueprint teases filler instead of the story's biggest moments.
       • Your run lengths vary. A column of nothing but {max_target_reuse}-chapter runs, or one with no single-chapter run in it, means you picked distances by the cap rather than by each peak's layers — re-check those anchors against rule 5.
       • There is exactly one mapping per chapter for chapters 1 to {precap_limit}, and none above.
-      • Every K is within its chapter's window (N < K <= N + {lookahead}) and at most {chapter_count}.
-      • Every chapter from an anchor's first use up to K-1 carries that SAME K. Read your own target column top to bottom: it must look like, example: 4,4,4,7,7,9,10 — a staircase that only steps up on the chapter that reached the previous anchor, and never shows the same value more than {max_target_reuse} times. Steps of one chapter (9 then 10) are fine; what this check exists to catch is a target changing to a new value before the old one was reached. Fix it.
+      • Every K is within its chapter's window (N < K <= N + {lookahead}) and at most {chapter_count}{opening_run_window_exception}.
+      • Every chapter from an anchor's first use up to K-1 carries that SAME K. Read your own target column top to bottom: it must look like, example: 4,4,4,7,7,9,10 — a staircase that only steps up on the chapter that reached the previous anchor, and never shows the same value more than {max_target_reuse} times{opening_run_cap_exception}. Steps of one chapter (9 then 10) are fine; what this check exists to catch is a target changing to a new value before the old one was reached. Fix it.
       • Every mapping in a run carries the SAME scene_description, word for word.
       • No two consecutive chapters carry the same dominant_emotion, and none appears more than twice in any five consecutive chapters.
-      • No target chapter is used by more than {max_target_reuse} chapters.
-      • Each run's limits only ever open up — never the same amount twice, never narrowing, and in a run of two or more the first one never names the act.
+      • No target chapter is used by more than {max_target_reuse} chapters{opening_run_cap_exception}.
+      • Each run's limits only ever open up — never the same amount twice, never narrowing, and in a run of two or more the first one never names the act{intimacy_run_act_exception}.
       • Every limit, at every rung, carries both a PERMIT: and a PROHIBIT: segment, and the PROHIBIT always rules out the outcome — what the act costs, how anyone reacts to it, how it resolves. A limit that is pure permission is a defect: rewrite it before output.
       • No limit's PERMIT segment states a consequence. Strip any "...which stuns them", "...proving she is X", "...leaving her in tears" and keep only what can be seen at the moment itself.
-      • Every run's FINAL limit still keeps one piece of the act back. This is a check for partial revelation, not for silence — that limit is meant to name a great deal. Read it on its own and ask whether a reader given only that would still not know the one thing that makes the moment land: which of them it turns out to be, what it says, which way it goes. If they would already know it, the peak has been spent and the chapter has nothing left.
+      • Every run's FINAL limit still keeps one piece of the act back{intimacy_run_act_exception}. This is a check for partial revelation, not for silence — that limit is meant to name a great deal. Read it on its own and ask whether a reader given only that would still not know the one thing that makes the moment land: which of them it turns out to be, what it says, which way it goes. If they would already know it, the peak has been spent and the chapter has nothing left.
       • Every bridge_reasoning is a concrete fact about its own chapter N — not a trait, a mood, or a justification of the pairing — and the rows differ from each other down a run.
       • Every character, place and named object inside your fields is spelled in the chapter's own script, exactly as the chapter text spells it — no Romanised names anywhere. Fix any that fail, then output.
 
@@ -291,6 +296,28 @@ GENRE_RANKING_NOTES = {
     "romance": ROMANCE_RANKING_NOTE,
 }
 
+# ────────────────────
+# GENRE-SPECIFIC OPENING-RUN AND UNKNOWN-LEAD NOTES
+# ────────────────────
+# Empty for the generic prompt. Romance is the one genre whose opening run is
+# allowed to reach past the ordinary lookahead (see pipeline/arc_planning.py::
+# enforce_constraints, exempt_first_run) and whose leads may appear before they
+# are formally introduced. These never touch the revelation (<limit>) rules or
+# the bridge-relevance rule — only whether a far-off target, or an unnamed
+# lead, may be picked at all.
+
+GENRE_OPENING_RUN_NOTES = {
+    "romance": ROMANCE_OPENING_RUN_NOTE,
+}
+
+GENRE_UNKNOWN_LEAD_NOTES = {
+    "romance": ROMANCE_UNKNOWN_LEAD_NOTE,
+}
+
+GENRE_INTIMACY_RUN_NOTES = {
+    "romance": ROMANCE_INTIMACY_RUN_NOTE,
+}
+
 GENRE_EMOTIONS = {
     "romance": ROMANCE_EMOTIONS,
 }
@@ -327,17 +354,46 @@ def build_blueprint_prompt(
     emotions_block = GENRE_EMOTIONS.get((genre or "").lower(), DEFAULT_EMOTIONS)
     ranking_note_block = GENRE_RANKING_NOTES.get((genre or "").lower(), DEFAULT_RANKING_NOTE)
     examples = GENRE_EMOTION_EXAMPLES.get((genre or "").lower(), DEFAULT_EMOTION_EXAMPLES)
+    opening_run_note = GENRE_OPENING_RUN_NOTES.get((genre or "").lower(), "")
+    unknown_lead_note = GENRE_UNKNOWN_LEAD_NOTES.get((genre or "").lower(), "")
+    intimacy_run_note = GENRE_INTIMACY_RUN_NOTES.get((genre or "").lower(), "")
+    # Derived, not a separate genre dict: the self-check list only needs to carve
+    # out the exemption where one was actually granted above, so whether these
+    # two phrases appear follows opening_run_note itself rather than genre.
+    has_opening_run_exception = bool(opening_run_note.strip())
+    opening_run_window_exception = (
+        " — except the exempt opening run above, which only has to stay at or below {chapter_count}"
+        if has_opening_run_exception else ""
+    )
+    opening_run_cap_exception = " (the exempt opening run aside)" if has_opening_run_exception else ""
+    has_intimacy_run_exception = bool(intimacy_run_note.strip())
+    intimacy_run_act_exception = (
+        " (except an INTIMACY & CLOSENESS run using the exception above, which names one beat per rung "
+        "starting from the first)"
+        if has_intimacy_run_exception else ""
+    )
     prompt = PRECAP_BLUEPRINT_SYSTEM_PROMPT
     for n, tag in enumerate(examples["tags"], start=1):
         prompt = prompt.replace(f"{{emotion_example_{n}}}", tag)
+    # Block substitutions run first because some blocks (the romance opening-run
+    # note) carry their own {lookahead}-style placeholders — those must still be
+    # live when the scalar replacements below run over them.
+    prompt = (
+        prompt.replace("{event_types_block}", event_types_block)
+        .replace("{emotions_block}", emotions_block)
+        .replace("{ranking_note_block}", ranking_note_block)
+        .replace("{opening_run_note}", opening_run_note)
+        .replace("{unknown_lead_note}", unknown_lead_note)
+        .replace("{intimacy_run_note}", intimacy_run_note)
+        .replace("{intimacy_run_act_exception}", intimacy_run_act_exception)
+        .replace("{opening_run_window_exception}", opening_run_window_exception)
+        .replace("{opening_run_cap_exception}", opening_run_cap_exception)
+    )
     return (
         prompt.replace("{lookahead}", str(lookahead))
         .replace("{precap_limit}", str(precap_limit))
         .replace("{chapter_count}", str(chapter_count))
         .replace("{max_target_reuse}", str(max_target_reuse))
-        .replace("{event_types_block}", event_types_block)
-        .replace("{emotions_block}", emotions_block)
         .replace("{emotion_repeat_example}", examples["repeat"])
         .replace("{emotion_run_example}", examples["run"])
-        .replace("{ranking_note_block}", ranking_note_block)
     )

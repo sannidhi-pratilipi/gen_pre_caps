@@ -10,7 +10,11 @@ from prompts.arc_prompt import ALL_EMOTION_LABELS, build_blueprint_prompt
 # N < K <= N + LOOKAHEAD. It is also the most chapters that may aim at one target
 # (the default for max_target_reuse below): under the sticky-anchor rule a run
 # anchored on K covers chapters A..K-1, so its length is the first chapter's distance.
-LOOKAHEAD = 4
+LOOKAHEAD = 5
+
+# Backward-compatible alias: max_target_reuse defaults to LOOKAHEAD everywhere
+# below, so the two have always meant the same number.
+MAX_TARGET_REUSE = LOOKAHEAD
 
 # The feeling a precap is built to land. Planned per chapter rather than left to
 # generation, because "don't repeat the last one's emotion" is a constraint
@@ -177,6 +181,7 @@ def enforce_constraints(
     lookahead: int = LOOKAHEAD,
     precap_limit: int | None = None,
     max_target_reuse: int = LOOKAHEAD,
+    exempt_first_run: bool = False,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
     """The window, anchor and monotonicity rules are instructions in the Pass 1
     prompt, so the model can violate them. Re-check every mapping here rather
@@ -206,7 +211,18 @@ def enforce_constraints(
 
     Returns the surviving mappings plus (chapter_number, reason) for each
     rejection, so the caller can report what was dropped instead of silently
-    shipping fewer precaps than expected."""
+    shipping fewer precaps than expected.
+
+    EXEMPT FIRST RUN (romance): the very first anchor of the story — the one
+    chapter 1 establishes — is allowed to reach past both the lookahead window
+    and the max_target_reuse cap, for as long as it stays unreached. This is
+    how a romance opening run gets to anchor on the leads' first or peak
+    intimate moment wherever it actually falls, instead of being limited to
+    whatever already sits inside the ordinary window. Every rule other than
+    those two limits still applies in full to this run — the sticky anchor,
+    the floor, the one-chapter grace — and the very next run, the one that
+    starts once this anchor is finally reached, goes back to the ordinary
+    lookahead and cap like any other."""
     # Chapters past precap_limit are fetched only to be aimed at, so they are
     # not valid sources. Defaulting to chapter_count - 1 keeps the plain
     # "plan everything that has a chapter after it" behaviour.
@@ -232,12 +248,14 @@ def enforce_constraints(
     floor = 0
     uses_of_target: dict[int, int] = {}
     drifted: list[tuple[int, str, str]] = []
+    opening_run_open = exempt_first_run  # cleared the moment the first anchor is reached
 
     # Walk chapters rather than mappings: a chapter with no surviving mapping
     # still has to advance the run, or the anchor would outlive its payoff.
     for n in range(1, precap_limit + 1):
         if anchor is not None and n >= anchor:
             anchor = None  # the reader has reached it; the horizon is free again
+            opening_run_open = False  # only the very first run gets the exemption
 
         mapping = by_chapter.get(n)
         if mapping is None:
@@ -245,9 +263,10 @@ def enforce_constraints(
 
         k = mapping.target_chapter
         early_release = anchor is not None and k != anchor and anchor - n == 1  # one-chapter grace, see docstring
+        exempt = opening_run_open
         if k <= n:
             reason = f"target {k} is not ahead of chapter {n}"
-        elif k > n + lookahead:
+        elif k > n + lookahead and not exempt:
             reason = f"target {k} is beyond the {lookahead}-chapter lookahead window"
         elif k > chapter_count:
             reason = f"target {k} is past the last chapter fetched ({chapter_count})"
@@ -258,7 +277,7 @@ def enforce_constraints(
             )
         elif k < floor:
             reason = f"target {k} moves backward from the previous target ({floor})"
-        elif uses_of_target.get(k, 0) >= max_target_reuse:
+        elif uses_of_target.get(k, 0) >= max_target_reuse and not exempt:
             # counted over kept mappings rather than inferred from the distance,
             # so a run that lost a chapter to an earlier rejection still cannot
             # quietly grow past the cap
@@ -313,6 +332,7 @@ def blueprint_from_xml(
     lookahead: int = LOOKAHEAD,
     precap_limit: int | None = None,
     max_target_reuse: int = LOOKAHEAD,
+    genre: str | None = None,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
     """Turn a blueprint XML into mappings, without calling the planner.
 
@@ -321,11 +341,20 @@ def blueprint_from_xml(
     are re-checked rather than trusted: a stored blueprint may have been written
     against a different lookahead or chapter count, or edited by hand.
 
+    `genre` controls only whether the first run gets the opening-run exemption
+    (see enforce_constraints) — romance is the one genre whose opening anchor is
+    allowed to reach past the ordinary window and cap.
+
     Raises BlueprintParseError if the XML holds no usable mappings, so a
     truncated or half-written file falls back to a real planning call instead of
     silently producing no precaps."""
     kept, rejected = enforce_constraints(
-        _parse_blueprint(response), chapter_count, lookahead, precap_limit, max_target_reuse
+        _parse_blueprint(response),
+        chapter_count,
+        lookahead,
+        precap_limit,
+        max_target_reuse,
+        exempt_first_run=(genre or "").lower() == "romance",
     )
     _report_blueprint(kept)
     return kept, rejected
@@ -372,7 +401,7 @@ def plan_precaps(
         messages, metadata=_call_metadata("precap_blueprint", language, run_id)
     )
     kept, rejected = blueprint_from_xml(
-        response, chapter_count, lookahead, precap_limit, max_target_reuse
+        response, chapter_count, lookahead, precap_limit, max_target_reuse, genre=genre
     )
     return kept, rejected, response
 

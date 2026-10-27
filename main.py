@@ -112,6 +112,7 @@ def main(argv=None):
                 chapter_count=len(chapters),
                 lookahead=LOOKAHEAD,
                 precap_limit=precap_limit,
+                genre=genre,
             )
             if mappings:
                 blueprint_xml = existing_xml

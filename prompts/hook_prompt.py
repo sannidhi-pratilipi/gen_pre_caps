@@ -1,4 +1,4 @@
-from prompts.genre.romance.hook import ROMANCE_GUIDANCE
+from prompts.genre.romance.hook import ROMANCE_GUIDANCE, ROMANCE_UNKNOWN_LEAD_HOOK_NOTE
 from prompts.languages.hindi.hook import HINDI_GUIDANCE
 from prompts.languages.malayalam.hook import MALAYALAM_GUIDANCE
 
@@ -17,7 +17,7 @@ HOOK_SYSTEM_PROMPT = """
     • DO NOT say where anyone ends up. Do not write what they will be left with, forced into, reduced to or made to give up. You may ask what is at stake as an open question. You may not state the loss as certain.
     • DO NOT spell out what an offer, demand, declaration or secret contains (its terms, its words, its penalty) beyond what WHAT THIS PRECAP MUST HOLD BACK allows.
     • DO NOT soften any of the above with may, can, might, perhaps or the forward tense. "She may find new hope" and "she will lose her pride" both break these rules.
-    Before finalizing, read every clause after the coming moment. If it tells the listener how the moment went, what it did to anyone, or what it settled, delete it.
+    Before finalizing, read every clause after the coming moment. If it tells the reader how the moment went, what it did to anyone, or what it settled, delete it.
 
     You will receive two chapters in full:
     • CHAPTER JUST READ — the chapter the reader has just finished. This is the whole of what the reader currently knows, and it is what the hook stands on: do not summarize it, and do not write the hook about it.
@@ -68,7 +68,7 @@ HOOK_SYSTEM_PROMPT = """
 
     • It is CLEAR ON ONE READ — say the thing directly, in the order it would be said out loud. Do not loop back on a sentence, circle around the point, or make the reader piece it together from scattered clauses. Withholding the outcome is deliberate craft; a confusing sentence is just bad writing.
     • It CONTAINS the anchor from STEP 1 in words, not implied — it must survive into the final text. Never land entirely on new people and new facts, and never name familiar people without saying what they did or decided in that chapter.
-    • It promises EXACTLY ONE coming moment from the TARGET SCENE, and that moment is cinematic — a room, a face, an object, an act. One a listener can see. Never two, never a list.
+    • It promises EXACTLY ONE coming moment from the TARGET SCENE, and that moment is cinematic — a room, a face, an object, an act. One a reader can see. Never two, never a list.
     • That moment CHANGES what the reader is standing on. Usually it overturns it — proving a belief wrong, a decision impossible, or a cost far higher than anyone thought. Sometimes it resets it instead: two people who have never met standing in the same room, or the terms of a character's life changing under them. Either way the ground the precap laid is not the same ground afterwards. A precap that merely adds a further event alongside the first has no engine.
     • The outcome stays withheld — all of it, not most of it. The precap stops at the edge of the moment: what it does to anyone, how they react, what it costs and who it changes are the chapter's to deliver, never the precap's. Everything else — where you start, what order the pieces come in, how you close — is yours, and it must NOT be the same from one precap to the next.
 
@@ -89,17 +89,17 @@ HOOK_SYSTEM_PROMPT = """
 
       REPORTED (dead): "She will cover her face completely so that he cannot recognise her. She will refuse to help him and her hatred will change everything." ALIVE: "He has decided no one will ever put him in their debt again. She is certain no man can make her bow. Neither of them knows the night is about to put them in the same room."
 
-    The first reports three events. The second sets two positions against each other and then collides them, and the listener is left holding a question nobody asked out loud.
+    The first reports three events. The second sets two positions against each other and then collides them, and the reader is left holding a question nobody asked out loud.
 
     THE DEVICES THAT DO THE WORK
 
     These are what the best precaps in this format are built from. Use them; do not use the same one twice running:
 
     • TWO POSITIONS, ONE COLLISION. This form is for THE TWO LEADS and no one else — never two side characters, and never a lead and a side character. State what each of the two leads is certain of, in parallel, then put them in the same room. "He has decided X. She is certain Y. But when they collide, whose certainty breaks first?" This is the strongest opening there is when the two leads are still apart, and it needs no conflict to exist yet. Two certainties is still ONE centre: give them in the same construction, one sentence each, and close on the centre's side of the collision — whose certainty breaks, and what is at stake for THEM, left open.
-    • THE THING THEY DO NOT KNOW. Give the reader knowledge the character does not have — "but he does not know that", "all three of them are unaware that". The listener leans forward because they are ahead of the character. That is the narrator lifting, not the centre changing, and it works only because it is announced: never make the move silently.
-    • A NAMED OBJECT AS THE ENGINE. Hang the precap on one physical thing the story owns: the parcel, the locket, the burnt photographs, the last keepsake. An object carries more pull than an abstract danger, because the listener can picture wanting it.
-    • THE COST NAMED TWICE. Build the close as an open question naming two things at stake, both of which hurt, and leave which one is lost undecided: "will this mistake cost her only her last hope, or the relationship that was just beginning too?" Always two named things the listener is now afraid of.
-    • WHO IS THIS. Withhold an identity and ask for it straight: "in her own house, who is the enemy?" The identity you withhold must belong to someone the reader has ALREADY met — the question is WHICH of them it turns out to be, not who some new person is. That is what makes it bite: the listener runs through the faces they know and cannot settle on one.
+    • THE THING THEY DO NOT KNOW. Give the reader knowledge the character does not have — "but he does not know that", "all three of them are unaware that". The reader leans forward because they are ahead of the character. That is the narrator lifting, not the centre changing, and it works only because it is announced: never make the move silently.
+    • A NAMED OBJECT AS THE ENGINE. Hang the precap on one physical thing the story owns: the parcel, the locket, the burnt photographs, the last keepsake. An object carries more pull than an abstract danger, because the reader can picture wanting it.
+    • THE COST NAMED TWICE. Build the close as an open question naming two things at stake, both of which hurt, and leave which one is lost undecided: "will this mistake cost her only her last hope, or the relationship that was just beginning too?" Always two named things the reader is now afraid of.
+    • WHO IS THIS. Withhold an identity and ask for it straight: "in her own house, who is the enemy?" The identity you withhold must belong to someone the reader has ALREADY met — the question is WHICH of them it turns out to be, not who some new person is. That is what makes it bite: the reader runs through the faces they know and cannot settle on one.
       "Who is the man whose truth will change everything she believes about herself?" posits a man the reader has never met, so it breaks the rule that every character must already be in CHAPTER JUST READ. Ask this question only when the answer is standing somewhere in that chapter.
     • THE PILE-UP. For a backstory moment, stack what one person went through in a single breath — saw this, lost that, and then ended up there — and cut it with a short sharp question about the one thing missing. Use this rarely, and never twice in a series.
 
@@ -107,7 +107,7 @@ HOOK_SYSTEM_PROMPT = """
     CHOOSE A FORM (SILENT)
     ────────────────────
 
-    Pick the form that fits THIS moment, from these seven, and build it out of the devices above. Then check it against the precaps you are shown below: if the one before it used the same form, use a different one. A listener hearing the same architecture at the end of every chapter stops hearing it at all, however different the events are.
+    Pick the form that fits THIS moment, from these seven, and build it out of the devices above. Then check it against the precaps you are shown below: if the one before it used the same form, use a different one. A reader who meets the same architecture at the end of every chapter stops noticing it at all, however different the events are.
 
     1. THE BREAK — establish the emotional position the character is standing in at the end of the chapter just read (what they have sworn, decided, are refusing to admit), then break it with the coming moment. Close on a question about which way they will go.
     1b. THE CROSSING — a variant of the same shape for when the coming moment is two separate worlds touching. Establish how far apart they are: what this character's life is, and how little it has to do with the other. Then put them in the same room, or let one reach the other as a name, a voice or a piece of news. Close on what that meeting puts at stake, left open. Nothing needs to be broken here — the distance closing IS the event.
@@ -119,17 +119,18 @@ HOOK_SYSTEM_PROMPT = """
 
     Forms 1 and 3 open on feeling and close on a question. Forms 2 and 6 close on a statement. Forms 1b, 4 and 5 can go either way. Rotate the closings as deliberately as the openings: three precaps in a row ending on a question sound like one precap played three times.
 
-    Whatever form you choose, the pivot into the coming moment must be audible — the listener has to feel the ground shift.
+    Whatever form you choose, the pivot into the coming moment must be felt plainly on the page — the reader has to feel the ground shift.
 
     • Reinterpret the moment creatively — your voice, not the author's.
     • Name the character or force at the center of it, using their name exactly as it appears in the source chapter text — do not alter, translate, simplify, shorten, or misspell any character name.
     • EVERY character the precap points at must already be in CHAPTER JUST READ. The target scene may be two or more chapters ahead, and the reader has met only the people that chapter put in front of them, so a character who appears solely in TARGET CHAPTER cannot be pointed at — not by name, and not by description either ("a man who calls her his sister", "someone from her past"). Both land the same way: on a reader who has nothing to attach them to. Present or mentioned both count. A character CHAPTER JUST READ names, or who is spoken about, written to, remembered, or referred to in it without appearing, is available to you; anyone that chapter is silent about is not. If the target scene's power depends on someone chapter just read has never heard of, build the precap on whoever in that scene the reader DOES know — what they are walking into, what they are about to find — and let the unknown person stay out of it entirely until the reader meets them.
+{unknown_lead_hook_note}
     • Always name enough of the coming moment to make it seeable — the people in it, the place it happens, or the thing it turns on. What you withhold is WHAT HAPPENS there: which way the decision goes, what the secret says, which of them it turns out to be. "Withholding the event" never means naming nothing; it means naming the moment and keeping back its content.
-    • NAME THE MOMENT, NEVER ITS AFTERMATH. This is where precaps spend the chapter they were written to sell. The moment gets named correctly, and then a clause is added saying what it did — "and it will leave her in tears", "which will mark him forever", "and he will have to risk his life to save her", "and the slap that follows will not let him sleep". Every one of those is the chapter's to deliver. Nothing anyone feels, says, does or becomes BECAUSE of the coming moment belongs in the precap, and a REACTION is an outcome like any other: the slap, the tears, the rescue, the refusal, the forgiveness are what the reader is opening the chapter to see. Before finalizing, find the coming moment in your draft and read everything that follows it: if a clause tells the listener how anyone came out of it, cut the clause — then build something better in the space it leaves, which is what HOLDING BACK IS A CRAFT below is for.
+    • NAME THE MOMENT, NEVER ITS AFTERMATH. This is where precaps spend the chapter they were written to sell. The moment gets named correctly, and then a clause is added saying what it did — "and it will leave her in tears", "which will mark him forever", "and he will have to risk his life to save her", "and the slap that follows will not let him sleep". Every one of those is the chapter's to deliver. Nothing anyone feels, says, does or becomes BECAUSE of the coming moment belongs in the precap, and a REACTION is an outcome like any other: the slap, the tears, the rescue, the refusal, the forgiveness are what the reader is opening the chapter to see. Before finalizing, find the coming moment in your draft and read everything that follows it: if a clause tells the reader how anyone came out of it, cut the clause — then build something better in the space it leaves, which is what HOLDING BACK IS A CRAFT below is for.
     • The hook must either pose a burning question in the reader's mind or hit them with something surprising — it should never feel flat or obvious.
     • Keep the acting lead's central conflict at the stake of the hook — what they are fighting, fearing, chasing or about to lose. THE WITNESS form narrates through the other lead's eyes, but even then the thing at risk is a lead's, never a side character's and never a background event.
-    • The precap follows ONE thread, and that means one acting lead — whoever the first sentence is about is who it is about at the close, with everyone else named only in relation to them. The two LEADS may be set against each other in a matching construction and collided in the one coming moment: that is TWO POSITIONS, ONE COLLISION, and it is still one thread because the collision is the moment. That licence covers the leads only and never extends to a side character. What is never allowed is a cast — following one person, then following another who has a thread of their own. A listener gets one pass and cannot re-anchor halfway. Before finalizing, read your closing line: if it has quietly become someone else's moment, rebuild it. The commonest form of this failure is not a cast of three but a STITCH OF TWO: one sentence saying what somebody did in CHAPTER JUST READ, the next saying what a different person is about to walk into, joined by nothing except that both are in this story. Every clause can be true and nothing invented, and it is still two tracks — the listener is handed two people to follow and follows neither. A second person belongs in the precap only when the coming moment puts them in the same room, the same decision or the same loss as the acting lead. Test it in one line: does the thing you took from the chapter just read land on the person facing the coming moment? If you cannot say how, you have two precaps stuck together — throw one away and rebuild on the one whose thread the scene is actually on.
-    • Name what the moment puts AT RISK, not merely what it is. A precap has stakes when the listener can say what this character could lose — a person, a place, a standing, a belief they live by, the one thing they have left. "Something she has been looking for will surface" is an event. "What she has been looking for will surface in the hands of the one person she cannot ask for it" is a stake. Name what is riding on the moment, never how it turns out — and when two outcomes both hurt, offer both as an open question: that names the stake and still withholds the outcome. Where naming the stake would itself give the scene away — because what is at risk IS the thing being withheld — do not name it. Say that something she cannot afford to lose is riding on it and leave it there. WHAT THIS PRECAP MUST HOLD BACK outranks this bullet. This holds however little you are permitted to NAME. A quiet step in a run withholds the ACT, never the DANGER: you may be forbidden to say what the letter is, who is holding it, or where it surfaces, and still say plainly that something she cannot afford to lose is riding on it. Low disclosure is not low stakes.
+    • The precap follows ONE thread, and that means one acting lead — whoever the first sentence is about is who it is about at the close, with everyone else named only in relation to them. The two LEADS may be set against each other in a matching construction and collided in the one coming moment: that is TWO POSITIONS, ONE COLLISION, and it is still one thread because the collision is the moment. That licence covers the leads only and never extends to a side character. What is never allowed is a cast — following one person, then following another who has a thread of their own. A reader gets one pass and cannot re-anchor halfway. Before finalizing, read your closing line: if it has quietly become someone else's moment, rebuild it. The commonest form of this failure is not a cast of three but a STITCH OF TWO: one sentence saying what somebody did in CHAPTER JUST READ, the next saying what a different person is about to walk into, joined by nothing except that both are in this story. Every clause can be true and nothing invented, and it is still two tracks — the reader is handed two people to follow and follows neither. A second person belongs in the precap only when the coming moment puts them in the same room, the same decision or the same loss as the acting lead. Test it in one line: does the thing you took from the chapter just read land on the person facing the coming moment? If you cannot say how, you have two precaps stuck together — throw one away and rebuild on the one whose thread the scene is actually on.
+    • Name what the moment puts AT RISK, not merely what it is. A precap has stakes when the reader can say what this character could lose — a person, a place, a standing, a belief they live by, the one thing they have left. "Something she has been looking for will surface" is an event. "What she has been looking for will surface in the hands of the one person she cannot ask for it" is a stake. Name what is riding on the moment, never how it turns out — and when two outcomes both hurt, offer both as an open question: that names the stake and still withholds the outcome. Where naming the stake would itself give the scene away — because what is at risk IS the thing being withheld — do not name it. Say that something she cannot afford to lose is riding on it and leave it there. WHAT THIS PRECAP MUST HOLD BACK outranks this bullet. This holds however little you are permitted to NAME. A quiet step in a run withholds the ACT, never the DANGER: you may be forbidden to say what the letter is, who is holding it, or where it surfaces, and still say plainly that something she cannot afford to lose is riding on it. Low disclosure is not low stakes.
 
     The hook must contain at least one concrete anchor from the target scene, such as:
     • A specific confrontation between named characters
@@ -152,10 +153,10 @@ HOOK_SYSTEM_PROMPT = """
     Specifically:
     • No archaic, literary, ornate or Sanskritised vocabulary. If a word belongs to a formal register the chapters never use, it is the wrong word here — no matter how well it fits the rhythm.
     • Never reach for the heavier synonym. Between the plain everyday word and the elevated one, the plain word wins every time, even when the elevated one sounds more dramatic.
-    • Take words FROM the chapters wherever a thing has a name there — what the characters call a place, a relative, a custom, an object. Do not substitute a bookish equivalent.
+    • Take words FROM the chapters wherever you can, creatively — not only what a thing is called (a place, a relative, a custom, an object), but the plain words the chapter itself reaches for to describe an action, a touch, a look. Reusing the story's own vocabulary this way is not the same as lifting a sentence; it is speaking the story's own tongue. Do not substitute a bookish equivalent.
     • Match how the story handles borrowed words. If the chapters use everyday borrowed words that readers actually say, use them the same way. Do not purify what the story does not purify, and do not import English the story never uses.
     • Keep the story's own forms of address and relationship words exactly as the chapters use them — these carry the accent more than any other words in the precap.
-    • Read your draft against a paragraph of the chapter. If it sounds like it came from a different book, or from a newsreader rather than the story's narrator, rewrite it plainer.
+    • Read your draft against a paragraph of the chapter. If it sounds like it came from a different book, or from a formal news report rather than the story's own narrator, rewrite it plainer.
 
     ──────────────────── 
     STAY INSIDE THE SOURCE
@@ -180,11 +181,11 @@ HOOK_SYSTEM_PROMPT = """
 
     The clause you cut is not a line lost. It is space to spend on something that works harder. Angles for spending it:
 
-    • END ON A THRESHOLD. Close on the instant before, not on a summary of what you are declining to say. The hand already raised. The door already opening. The name already written on the paper. The listener finishes the sentence themselves, and what they imagine costs you nothing and gives away nothing.
-    • LET A CERTAINTY STAND WHERE THE OUTCOME WOULD HAVE GONE. Someone walks into this moment sure of something. Put that certainty in the sentence and let the listener feel it about to be tested — "he walks in certain she will not fight back" reveals nothing about what she does, and makes what she does the only thing worth opening the chapter for.
+    • END ON A THRESHOLD. Close on the instant before, not on a summary of what you are declining to say. The hand already raised. The door already opening. The name already written on the paper. The reader finishes the sentence themselves, and what they imagine costs you nothing and gives away nothing.
+    • LET A CERTAINTY STAND WHERE THE OUTCOME WOULD HAVE GONE. Someone walks into this moment sure of something. Put that certainty in the sentence and let the reader feel it about to be tested — "he walks in certain she will not fight back" reveals nothing about what she does, and makes what she does the only thing worth opening the chapter for.
     • ASK FOR THE PIECE YOU KEPT. The strongest close is often a question whose answer is exactly the thing you held back — not a question about whether something will happen, but about which way, whose, or how much.
 
-    These are angles to choose between, never a sequence to work through, and none of them is a house style. The same device twice in a row is heard as a formula, and a formula withholds nothing, because the listener has already learnt where it stops.
+    These are angles to choose between, never a sequence to work through, and none of them is a house style. The same device twice in a row reads as a formula, and a formula withholds nothing, because the reader has already learnt where it stops.
 
     ────────────────────
     WHAT TO AVOID
@@ -192,48 +193,39 @@ HOOK_SYSTEM_PROMPT = """
 
     • Do not lift, quote, or closely paraphrase sentences from the chapter text
     • Do not open with flat plot reporting — who went where, who met whom; an opening must carry a feeling, an image, or a moment, not an itinerary — and do not let the opening or the coming moment leak its own outcome
-    • Do not promise more than one upcoming moment — two teased events split the listener's attention and neither lands
-    • Do not state what actually happens in the target scene — who the stranger turns out to be, what the secret says, which way the decision goes — or add a clause saying what it did afterward: who cried, who was saved, how anyone answered it. Name who is in it, where it is, or what it turns on, and stop there; a reaction is an outcome too
+    • Do not promise more than one upcoming moment — two teased events split the reader's attention and neither lands
     • Do not reuse the form, opening move, pivot words, closing construction, or a vivid word (its images, charged nouns and verbs) from the precaps you are shown, and do not echo what they already gave away — go one layer past them. Names and ordinary words do not count; the word that carries the picture does
     • Do not explain the twist in the line before the close — an explained gap is not a gap
     • Do not write neutral, procedural description where an emotional word exists — the feeling is the product — but do not write about feelings alone either; anchor every feeling to a specific action or consequence
     • Do not include a detail just because the chapter contains it, or keep one the precap could stand without. Carry only what the one coming moment cannot be seen without — as a rule, one other person at most, one thing from CHAPTER JUST READ, and the one thing the moment turns on. Anything more is almost always padding, however vivid
-    • Do not summarize the chapter just read
-    • Do not write clipped or fragmented sentences — each must be complete and carry its full meaning — and do not write one that carries neither a turn nor a named thing; that is padding, however grammatical
+    • Do not summarize either chapter — not CHAPTER JUST READ, and not the target scene, which must arrive as one seeable moment (a face, a room, an object, an act), never a compressed description of what happens in it
+    • Do not write clipped or fragmented sentences — each must be complete and carry its full meaning
+    • Do not break a sentence into several sub-clauses to sound more careful or literary, and do not write the telling itself indirectly — say the thing plainly, in as few clauses as the beat needs. Creative means a fresh angle or image, never a winding or evasive sentence. This is about HOW you say what you say, never about what you hold back: the outcome still stays withheld, said plainly or not
     • Do not make grammar or spelling mistakes — the hook must be grammatically correct and every word spelled correctly in the target language
     • Do not write something a reader could have predicted — surprise them or make them desperate to know what happens
     • Use tense deliberately: the ground already stands in the tense the story is told in; the coming moment sits in the forward tense ("is about to", "will soon", "is going to") because it has not been reached yet, and must never be narrated as though it is already happening in front of the reader. Never mix tenses inside one sentence
 
-    ──────────────────── 
-    THIS IS HEARD, NOT READ
+    ────────────────────
+    WRITTEN FOR ONE READ
     ────────────────────
 
-    The precap is read, but it has to work as if it were spoken — a voice catching someone the moment they put the chapter down. Write it for an ear that gets one pass and cannot go back over a clause. Everything follows from that:
+    This is a written precap, read in silence, catching someone the moment they put the chapter down. Write for an eye that gets one pass and will not go back over a clause. Everything follows from that:
 
-    • Write in spoken rhythm, in the order a person would say it out loud. How long a sentence may run is set by the language-specific priorities below and nowhere else: where they ask for short sentences, keep it to one idea per sentence; where they allow a long clause-joined sentence, that is correct there. What never changes is that it must be followable on one hearing.
-    • Never stack subordinate clauses before the main point — by the time the sentence lands, the listener has lost its start. This is about where the clauses sit, not how many there are.
+    • Write in natural rhythm, in the order a person would say it, with as few clauses as the beat needs. A long, clause-joined sentence is only ever the exception the language-specific priorities below name, never the default. What never changes is that it must be followable in a single read.
+    • Never stack subordinate clauses before the main point — by the time the sentence lands, the reader has lost its start.
     • Choose the word that carries feeling over the word that carries information. This is a teaser, not a synopsis.
     • Keep the tension continuous. Every sentence should raise it. The moment you start explaining, the tension drops and does not come back.
-    • Read your draft aloud in your head before finalizing. If you stumble, or if any sentence needs to be heard twice, rewrite it.
+    • Read your draft back before finalizing. If you stumble, or if any sentence needs a second look to land, rewrite it.
 
-    ──────────────────── 
-    TWO MORE ANGLES (use rarely)
+    ────────────────────
+    THE CLOSING LINE
     ────────────────────
 
-    Two more ways a moment can bite, beyond the Forms and Devices above. Read these for the angle only, never to copy the example itself, and reach for them only when nothing above fits better:
+    For a genuinely massive turning point only, deliberate vagueness can itself signal something too big to name yet — never use this as a shortcut for an ordinary scene.
 
-    CHAOS & SCALE — for a genuinely massive turning point, deliberate vagueness can itself be the hook: it signals something too big to name yet. e.g. "Kendall walks into the wedding certain the deal is already his, but tonight is the night everything he counted on is put to the test." This is a narrow exception to the rule above that tension must come from partial exposure of a real moment, not vague language — use it only when the moment really is that large, never as a shortcut for an ordinary scene.
-    THE BETRAYAL — when the coming moment is someone trusted turning on the acting lead, keep the lead as the subject and the betrayer as what they walk into, never the reverse. e.g. "Mark is about to find out what the one person he trusted most has been preparing for him all along."
+    A closing question earns its place only if it could not be pasted onto a different chapter — swap the names out and check whether it would still fit anywhere in the series. Reject the closed-loop formula: "will the truth come out?", "will he find out who she is?", "will she survive?" answer themselves and add no anticipation. Ask what it will cost, which one they choose, or what is left between them instead.
 
-    THE CLOSING QUESTION can also be built on, beyond what the devices above already give you as questions:
-    • A CHOICE: "Will Kabir choose his family's honour or the woman he loves, knowing he cannot have both?"
-    • A RELATIONSHIP: "What is left of a marriage once Priya knows who signed those papers first?"
-
-    A question earns its place only if it could not be pasted onto a different chapter. Test it: if the names were swapped out, would it still fit anywhere in the series? Then it is generic, and you must find the gap specific to THIS collision.
-
-    Reject the closed-loop formula. Questions shaped "will the truth come out?", "will he find out who she is?", "will she survive?" answer themselves — of course the truth comes out, that is what a next chapter is for. They add no anticipation. Ask WHAT IT WILL COST, WHICH ONE THEY WILL CHOOSE, WHO THEY BECOME AFTERWARDS, or WHAT IS LEFT BETWEEN THEM — questions whose answers are genuinely unknown.
-
-    Close on a statement when the coming moment is final enough that a question would soften it, and whenever the precap before this one closed on a question — even then, leave the consequence open. e.g. "Nisha has kept her secret for years, and tonight she is about to walk into the one room where it is hardest to keep."
+    Close on a statement when the coming moment is final enough that a question would soften it, or when the precap before this one already closed on a question — even then, leave the consequence open.
 
     ──────────────────── 
     CRITICAL FORMATTING RESTRICTIONS
@@ -272,11 +264,26 @@ GENRE_GUIDANCE = {
     "romance": ROMANCE_GUIDANCE,
 }
 
+# ────────────────────
+# GENRE-SPECIFIC UNKNOWN-LEAD EXCEPTION
+# ────────────────────
+# Dropped into {unknown_lead_hook_note} right after the "EVERY character..."
+# bullet above. Empty for the generic prompt — mirrors the bracketed note the
+# romance blueprint prompt adds to scene_description (see
+# prompts/genre/romance/arc_planner.py::ROMANCE_UNKNOWN_LEAD_NOTE), and never
+# relaxes anything else that bullet says about side characters.
+
+GENRE_UNKNOWN_LEAD_HOOK_NOTES = {
+    "romance": ROMANCE_UNKNOWN_LEAD_HOOK_NOTE,
+}
+
 
 def build_hook_prompt(language: str | None = None, genre: str | None = None) -> str:
     language_guidance = LANGUAGE_GUIDANCE.get((language or "").lower(), "")
     genre_guidance = GENRE_GUIDANCE.get((genre or "").lower(), "")
-    return HOOK_SYSTEM_PROMPT + language_guidance + genre_guidance
+    unknown_lead_hook_note = GENRE_UNKNOWN_LEAD_HOOK_NOTES.get((genre or "").lower(), "")
+    prompt = HOOK_SYSTEM_PROMPT.replace("{unknown_lead_hook_note}", unknown_lead_hook_note)
+    return prompt + language_guidance + genre_guidance
 
 
 # Where this precap sits in its anchor run — position and pacing ONLY.
@@ -310,7 +317,7 @@ def _run_position_note(mapping) -> str:
     note = (
         f"{following} after this one will reach for this SAME scene before the reader gets there, "
         "and each will be allowed to name more than you are. Pace accordingly: your job is to move "
-        "the listener one step closer, not to arrive."
+        "the reader one step closer, not to arrive."
     )
     # followers is distance - 1 and distance is capped at LOOKAHEAD. At the
     # current LOOKAHEAD of 4, the top of the longest possible run reaches here
@@ -344,7 +351,7 @@ def build_bridge_context(
 
     * `previous_limit` is run-scoped — how far the disclosure of THIS scene had got one chapter ago. Meaningless across a run boundary, so the caller passes it only within a run.
     * `same_scene_precaps` is every precap already written for this same scene, the whole run so far. These are the ones at real risk of saying the same thing twice, because they are about the same moment.
-    * `recent_precaps` is the last few precaps of the series in order, whatever scene they were about, oldest first. Repetition the listener notices is not only chapter-to-chapter — a pivot phrase or a closing construction reused three chapters later is just as audible — so the window is several precaps wide, not one. Any that are already listed as same-scene precaps
+    * `recent_precaps` is the last few precaps of the series in order, whatever scene they were about, oldest first. Repetition the reader notices is not only chapter-to-chapter — a pivot phrase or a closing construction reused three chapters later stands out just as much — so the window is several precaps wide, not one. Any that are already listed as same-scene precaps
       are dropped here rather than sent twice."""
     parts = []
 
@@ -367,7 +374,7 @@ def build_bridge_context(
         if mapping.dominant_emotion:
             parts.append(
                 "\n\nDOMINANT EMOTION (internal — the one feeling this precap must leave the "
-                "listener holding. It was assigned across the whole series so that neighbouring "
+                "reader holding. It was assigned across the whole series so that neighbouring "
                 "precaps land different feelings, so it is not yours to swap for an easier "
                 f"one):\n{mapping.dominant_emotion}"
             )
@@ -410,7 +417,7 @@ def build_bridge_context(
         )
         parts.append(
             "\n\nEVERY PRECAP ALREADY WRITTEN FOR THIS SAME SCENE, IN ORDER (internal — the "
-            "listener has heard all of these, each reaching for the very scene yours reaches for. "
+            "reader has already read all of these, each reaching for the very scene yours reaches for. "
             "Between them they have already spent a set of words, images and angles on it. Yours "
             "must go past ALL of them, not just the last: say something none of them said, and do "
             "not reach again for an image or a phrase any of them already used. If your draft "
@@ -434,10 +441,10 @@ def build_bridge_context(
             for n, text in enumerate(reversed(others), start=1)
         )
         parts.append(
-            "\n\nTHE PRECAPS THE LISTENER HEARD MOST RECENTLY, WORD FOR WORD (internal — these "
+            "\n\nTHE PRECAPS THE READER READ MOST RECENTLY, WORD FOR WORD (internal — these "
             "were about different scenes, so the risk is not repeated content but repeated SHAPE. "
             "Do not reuse any of their opening moves, their pivot phrases, their images, or the "
-            "construction of their closing lines. Heard one after another, a repeated shape lands "
+            "construction of their closing lines. Read one after another, a repeated shape lands "
             "as the same precap played again however different the events are, and the more of "
             f"these that share a shape, the harder yours must work to break it):\n{listed}"
         )
