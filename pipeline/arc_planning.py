@@ -6,15 +6,13 @@ from dataclasses import dataclass, replace
 from llm.tfy_client import complete
 from prompts.arc_prompt import ALL_EMOTION_LABELS, build_blueprint_prompt
 
-# How far ahead of chapter N a precap may reach: the target chapter K must satisfy
-# N < K <= N + LOOKAHEAD. It is also the most chapters that may aim at one target
-# (the default for max_target_reuse below): under the sticky-anchor rule a run
-# anchored on K covers chapters A..K-1, so its length is the first chapter's distance.
-LOOKAHEAD = 5
-
-# Backward-compatible alias: max_target_reuse defaults to LOOKAHEAD everywhere
-# below, so the two have always meant the same number.
-MAX_TARGET_REUSE = LOOKAHEAD
+# There is no fixed cap on a run's length or on how far out its target may
+# sit: under the sticky-anchor rule a run anchored on K covers every chapter
+# from its first use up to K-1, so its length is simply the distance the first
+# chapter of the run reaches. That distance is the planner's call, made from
+# the peak's own layers (rule 5 in the blueprint prompt) and nothing else. The
+# only hard ceiling left is that K must be a chapter whose text was actually
+# fetched (K <= chapter_count).
 
 # The feeling a precap is built to land. Planned per chapter rather than left to
 # generation, because "don't repeat the last one's emotion" is a constraint
@@ -178,14 +176,16 @@ def _parse_blueprint(response: str) -> list[ChapterMapping]:
 def enforce_constraints(
     mappings: list[ChapterMapping],
     chapter_count: int,
-    lookahead: int = LOOKAHEAD,
     precap_limit: int | None = None,
-    max_target_reuse: int = LOOKAHEAD,
-    exempt_first_run: bool = False,
+    force: bool = False,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
-    """The window, anchor and monotonicity rules are instructions in the Pass 1
+    """The anchor and monotonicity rules are instructions in the Pass 1
     prompt, so the model can violate them. Re-check every mapping here rather
-    than trusting the response.
+    than trusting the response. There is no lookahead window and no reuse cap
+    — how far out a target may sit, and how long a run may run, are bounded
+    only by chapter_count (the target must be a chapter whose text was
+    actually fetched); everything else about the distance is left to rule 5 of
+    the prompt (choose the distance from the peak's own layers).
 
     The load-bearing rule is the ANCHOR: once chapter A points at chapter K,
     every chapter from A up to K-1 must keep pointing at K, and the horizon is
@@ -209,20 +209,20 @@ def enforce_constraints(
     release the anchor, so the chapters after it stay locked on the same
     promise.
 
+    FORCE: `force=True` keeps the rows the anchor rules would have dropped —
+    a jump past an unreached anchor, or a target that moves backward — and
+    reports each one instead. It is for working on a stored blueprint whose
+    staircase is already broken (an older plan, a hand edit, a window planned
+    without sight of the run before it), where dropping those rows means the
+    chapters simply cannot be generated at all. A forced row starts its own
+    anchor from where it lands, so the rows after it are checked against it.
+    The structural rules are NOT bypassed: a target that is not ahead of its
+    own chapter, or past the last chapter fetched, is still rejected, because
+    neither has a chapter text for Pass 2 to read.
+
     Returns the surviving mappings plus (chapter_number, reason) for each
     rejection, so the caller can report what was dropped instead of silently
-    shipping fewer precaps than expected.
-
-    EXEMPT FIRST RUN (romance): the very first anchor of the story — the one
-    chapter 1 establishes — is allowed to reach past both the lookahead window
-    and the max_target_reuse cap, for as long as it stays unreached. This is
-    how a romance opening run gets to anchor on the leads' first or peak
-    intimate moment wherever it actually falls, instead of being limited to
-    whatever already sits inside the ordinary window. Every rule other than
-    those two limits still applies in full to this run — the sticky anchor,
-    the floor, the one-chapter grace — and the very next run, the one that
-    starts once this anchor is finally reached, goes back to the ordinary
-    lookahead and cap like any other."""
+    shipping fewer precaps than expected."""
     # Chapters past precap_limit are fetched only to be aimed at, so they are
     # not valid sources. Defaulting to chapter_count - 1 keeps the plain
     # "plan everything that has a chapter after it" behaviour.
@@ -246,16 +246,14 @@ def enforce_constraints(
     anchor: int | None = None
     anchor_scene = ""
     floor = 0
-    uses_of_target: dict[int, int] = {}
     drifted: list[tuple[int, str, str]] = []
-    opening_run_open = exempt_first_run  # cleared the moment the first anchor is reached
+    forced: list[tuple[int, str]] = []
 
     # Walk chapters rather than mappings: a chapter with no surviving mapping
     # still has to advance the run, or the anchor would outlive its payoff.
     for n in range(1, precap_limit + 1):
         if anchor is not None and n >= anchor:
             anchor = None  # the reader has reached it; the horizon is free again
-            opening_run_open = False  # only the very first run gets the exemption
 
         mapping = by_chapter.get(n)
         if mapping is None:
@@ -263,29 +261,37 @@ def enforce_constraints(
 
         k = mapping.target_chapter
         early_release = anchor is not None and k != anchor and anchor - n == 1  # one-chapter grace, see docstring
-        exempt = opening_run_open
+
+        # Structural: there is no usable chapter text behind these, so --force
+        # does not reach them.
         if k <= n:
-            reason = f"target {k} is not ahead of chapter {n}"
-        elif k > n + lookahead and not exempt:
-            reason = f"target {k} is beyond the {lookahead}-chapter lookahead window"
-        elif k > chapter_count:
-            reason = f"target {k} is past the last chapter fetched ({chapter_count})"
-        elif anchor is not None and k != anchor and not early_release:
-            reason = (
+            rejected.append((n, f"target {k} is not ahead of chapter {n}"))
+            continue
+        if k > chapter_count:
+            rejected.append(
+                (n, f"target {k} is past the last chapter fetched ({chapter_count})")
+            )
+            continue
+
+        # Staircase: a real defect in the plan, but one whose rows are still
+        # generable, so --force keeps them.
+        broken = ""
+        if anchor is not None and k != anchor and not early_release:
+            broken = (
                 f"jumps to {k} while chapter {anchor} is still promised and unreached — "
                 f"the anchor holds until chapter {anchor}"
             )
         elif k < floor:
-            reason = f"target {k} moves backward from the previous target ({floor})"
-        elif uses_of_target.get(k, 0) >= max_target_reuse and not exempt:
-            # counted over kept mappings rather than inferred from the distance,
-            # so a run that lost a chapter to an earlier rejection still cannot
-            # quietly grow past the cap
-            reason = (
-                f"target {k} is already used by {max_target_reuse} chapters, the most allowed"
-            )
+            broken = f"target {k} moves backward from the previous target ({floor})"
+
+        if broken and not force:
+            rejected.append((n, broken))
         else:
-            if anchor is None or early_release:
+            if broken:
+                forced.append((n, broken))
+            # A forced row is an anchor in its own right: the run it breaks into
+            # is the one the rows after it must now match, scene included.
+            if anchor is None or early_release or broken:
                 anchor = k
                 anchor_scene = mapping.scene_description
             elif mapping.scene_description != anchor_scene:
@@ -298,11 +304,7 @@ def enforce_constraints(
                 drifted.append((n, anchor_scene, mapping.scene_description))
                 mapping = replace(mapping, scene_description=anchor_scene)
             floor = k
-            uses_of_target[k] = uses_of_target.get(k, 0) + 1
             kept.append(mapping)
-            continue
-
-        rejected.append((n, reason))
 
     repeated = [
         (b.chapter_number, b.dominant_emotion)
@@ -315,6 +317,12 @@ def enforce_constraints(
             f"[blueprint] chapter {n}: dominant emotion {emotion} repeats the chapter before it "
             "— consecutive precaps will land the same feeling"
         )
+
+    if forced:
+        for n, reason in forced:
+            print(
+                f"[blueprint] chapter {n}: kept by --force despite the anchor check — {reason}"
+            )
 
     if drifted:
         for n, expected, got in drifted:
@@ -329,21 +337,15 @@ def enforce_constraints(
 def blueprint_from_xml(
     response: str,
     chapter_count: int,
-    lookahead: int = LOOKAHEAD,
     precap_limit: int | None = None,
-    max_target_reuse: int = LOOKAHEAD,
-    genre: str | None = None,
+    force: bool = False,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
     """Turn a blueprint XML into mappings, without calling the planner.
 
     The same parse and constraint check Pass 1 runs on a fresh response, split
     out so a blueprint already sitting on disk can be reused. The constraints
     are re-checked rather than trusted: a stored blueprint may have been written
-    against a different lookahead or chapter count, or edited by hand.
-
-    `genre` controls only whether the first run gets the opening-run exemption
-    (see enforce_constraints) — romance is the one genre whose opening anchor is
-    allowed to reach past the ordinary window and cap.
+    against a different chapter count, or edited by hand.
 
     Raises BlueprintParseError if the XML holds no usable mappings, so a
     truncated or half-written file falls back to a real planning call instead of
@@ -351,10 +353,8 @@ def blueprint_from_xml(
     kept, rejected = enforce_constraints(
         _parse_blueprint(response),
         chapter_count,
-        lookahead,
         precap_limit,
-        max_target_reuse,
-        exempt_first_run=(genre or "").lower() == "romance",
+        force=force,
     )
     _report_blueprint(kept)
     return kept, rejected
@@ -363,9 +363,7 @@ def blueprint_from_xml(
 def plan_precaps(
     chapters: list[str],
     language: str | None = None,
-    lookahead: int = LOOKAHEAD,
     precap_limit: int | None = None,
-    max_target_reuse: int = LOOKAHEAD,
     run_id: str | None = None,
     genre: str | None = None,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]], str]:
@@ -379,7 +377,7 @@ def plan_precaps(
 
     `genre` swaps out the peak-event vocabulary in the prompt (see
     prompts/arc_prompt.py::GENRE_EVENT_TYPES) — it does not change any of the
-    structural rules (anchors, lookahead, limits), only what counts as a peak.
+    structural rules (anchors, limits), only what counts as a peak.
 
     Returns the kept mappings, the rejections, and the planner's raw response
     so the caller can persist the blueprint XML alongside the hooks."""
@@ -391,18 +389,14 @@ def plan_precaps(
     messages = [
         {
             "role": "system",
-            "content": build_blueprint_prompt(
-                lookahead, precap_limit, chapter_count, max_target_reuse, genre
-            ),
+            "content": build_blueprint_prompt(precap_limit, chapter_count, genre),
         },
         {"role": "user", "content": _format_chapters_block(chapters)},
     ]
     response = complete(
         messages, metadata=_call_metadata("precap_blueprint", language, run_id)
     )
-    kept, rejected = blueprint_from_xml(
-        response, chapter_count, lookahead, precap_limit, max_target_reuse, genre=genre
-    )
+    kept, rejected = blueprint_from_xml(response, chapter_count, precap_limit)
     return kept, rejected, response
 
 
@@ -411,7 +405,7 @@ def _report_blueprint(kept: list[ChapterMapping]) -> None:
     mapping."""
     # Run lengths: under the sticky-anchor rule a run's length is the distance
     # its first chapter reaches, so the distance spread shows whether runs were
-    # matched to their peaks or stretched to the cap.
+    # matched to their peaks' own layers or stretched further than they needed.
     if kept:
         spread = Counter(m.distance for m in kept)
         print(

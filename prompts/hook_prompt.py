@@ -124,6 +124,7 @@ HOOK_SYSTEM_PROMPT = """
     • Reinterpret the moment creatively — your voice, not the author's.
     • Name the character or force at the center of it, using their name exactly as it appears in the source chapter text — do not alter, translate, simplify, shorten, or misspell any character name.
     • EVERY character the precap points at must already be in CHAPTER JUST READ. The target scene may be two or more chapters ahead, and the reader has met only the people that chapter put in front of them, so a character who appears solely in TARGET CHAPTER cannot be pointed at — not by name, and not by description either ("a man who calls her his sister", "someone from her past"). Both land the same way: on a reader who has nothing to attach them to. Present or mentioned both count. A character CHAPTER JUST READ names, or who is spoken about, written to, remembered, or referred to in it without appearing, is available to you; anyone that chapter is silent about is not. If the target scene's power depends on someone chapter just read has never heard of, build the precap on whoever in that scene the reader DOES know — what they are walking into, what they are about to find — and let the unknown person stay out of it entirely until the reader meets them.
+    • A CHARACTER THE READER ALREADY KNOWS IS NAMED AND STATED PLAINLY. DO NOT hide them behind a description or a question about who they are. DO NOT make a mystery of a person or a fact that CHAPTER JUST READ already established — their name, their relationship, their situation. State what is true about them in this scene as a fact, and let the withheld part be only what the limit keeps back.
 {unknown_lead_hook_note}
     • Always name enough of the coming moment to make it seeable — the people in it, the place it happens, or the thing it turns on. What you withhold is WHAT HAPPENS there: which way the decision goes, what the secret says, which of them it turns out to be. "Withholding the event" never means naming nothing; it means naming the moment and keeping back its content.
     • NAME THE MOMENT, NEVER ITS AFTERMATH. This is where precaps spend the chapter they were written to sell. The moment gets named correctly, and then a clause is added saying what it did — "and it will leave her in tears", "which will mark him forever", "and he will have to risk his life to save her", "and the slap that follows will not let him sleep". Every one of those is the chapter's to deliver. Nothing anyone feels, says, does or becomes BECAUSE of the coming moment belongs in the precap, and a REACTION is an outcome like any other: the slap, the tears, the rescue, the refusal, the forgiveness are what the reader is opening the chapter to see. Before finalizing, find the coming moment in your draft and read everything that follows it: if a clause tells the reader how anyone came out of it, cut the clause — then build something better in the space it leaves, which is what HOLDING BACK IS A CRAFT below is for.
@@ -319,10 +320,10 @@ def _run_position_note(mapping) -> str:
         "and each will be allowed to name more than you are. Pace accordingly: your job is to move "
         "the reader one step closer, not to arrive."
     )
-    # followers is distance - 1 and distance is capped at LOOKAHEAD. At the
-    # current LOOKAHEAD of 4, the top of the longest possible run reaches here
-    # with followers == 3, so this branch is live: it is the note for a run
-    # long enough that its first rung is genuinely a distant one.
+    # followers is distance - 1, and distance has no fixed ceiling any more — a
+    # run is as long as its peak's own layers justify. followers >= 3 is a
+    # heuristic cutoff for "long enough that this rung is genuinely a distant
+    # one," not a boundary tied to any particular run length.
     if followers >= 3:
         note += (
             " You are at the top of the run, so this is the quietest look at the scene there will "

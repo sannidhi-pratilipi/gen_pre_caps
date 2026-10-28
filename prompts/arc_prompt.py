@@ -1,4 +1,5 @@
 from prompts.genre.romance.arc_planner import (
+    ROMANCE_BEAT_LADDER_ACT_CLAUSE,
     ROMANCE_EMOTION_EXAMPLES,
     ROMANCE_EMOTION_LABELS,
     ROMANCE_EMOTIONS,
@@ -56,14 +57,14 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
 {ranking_note_block}
     5. Anchor ON the peaks, and plan BACKWARD from the biggest ones. A turning point at chapter 9 means the chapters before it can point at chapter 9 — you fill in toward it, you do not stumble onto it. This is the step that decides whether the blueprint is any good.
        Do NOT walk forward from chapter 1 picking whatever looks strongest three chapters out. That produces anchors at 4, 7, 10, 13 — positions set by arithmetic, which will miss every peak the story actually has. Start from the peaks and work back to meet them.
-    6. Set each anchor's distance as you place it, by rule 5 — from how many layers that peak has, never by how long a run the cap would allow. Under the sticky anchor a run covers every chapter from its first use up to K-1, so choosing K is choosing the run length, and stretching one is not free: it spends chapters that a nearer peak could have had.
+    6. Set each anchor's distance as you place it, by rule 5 — from how many layers that peak has, never from habit or a round number. Under the sticky anchor a run covers every chapter from its first use up to K-1, so choosing K is choosing the run length, and stretching one is not free: it spends chapters that a nearer peak could have had.
     7. Only then fill the gaps. Where a stretch is left over between two peak runs, those chapters still need targets, so add an intermediate anchor on the strongest peak available there. These are connective tissue: give them the peaks that are left over, never a peak a bigger run needed, and keep their runs short so the next peak's run can start as early as possible.
 
     ──────────────────── 
     RULES
     ────────────────────
 
-    1. LOOKAHEAD WINDOW: the target must satisfy N < K <= N + {lookahead}, and K must be a chapter whose text you were actually given (so K is at most {chapter_count}). Never target a chapter outside the text you received, and never target chapter N itself or anything before it. Targets MAY and often should land above {precap_limit} — those chapters exist to be aimed at, even though they never get a mapping of their own.
+    1. TARGET RANGE: the target must satisfy N < K <= {chapter_count}, and K must be a chapter whose text you were actually given. Never target a chapter outside the text you received, and never target chapter N itself or anything before it. There is no fixed number of chapters K may sit ahead of N — rule 5 decides that distance from the peak's own layers, never from an arithmetic window. Targets MAY and often should land above {precap_limit} — those chapters exist to be aimed at, even though they never get a mapping of their own.
 {opening_run_note}
 
     2. STICKY ANCHOR — THE MOST IMPORTANT RULE: a precap is a promise. When chapter A points at chapter K, the reader starts waiting for chapter K. You must therefore keep pointing at K from EVERY chapter from A up to K-1. Only once the reader has actually reached K may the target move on.
@@ -72,11 +73,9 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
 
     3. HORIZON SHIFT ONLY AFTER PAYOFF: the target may only increase on a chapter that has reached or passed the previous anchor. The result is a run of anchors, each held until it lands: 1,2,3 -> 4, then 4,5,6 -> 7, then 7,8 -> 9, and so on. The target never moves backward.
 
-    4. AT MOST {max_target_reuse} CHAPTERS PER TARGET: no more than {max_target_reuse} chapters may aim at the same target chapter. Any more than that pointing at it is rejected outright.
-       Every chapter you picked out in step 4 must appear as a target_chapter_id somewhere. If one does not, you have let the staircase drift past the story's own peak — go back and re-plan backward from it.
-       Because rule 2 makes every chapter from an anchor's first use up to K-1 carry that same K, the run's length is exactly the distance the FIRST chapter of the run reaches. So this cap and the window in rule 1 are the same limit seen from two sides: when you start a new anchor, never pick a K more than {max_target_reuse} chapters out, or you have committed more chapters to it than are allowed.
+    4. EVERY CHOSEN PEAK BECOMES AN ANCHOR: every chapter you picked out in step 4 (RANK THE PEAKS) must appear as a target_chapter_id somewhere. If one does not, you have let the staircase drift past the story's own peak — go back and re-plan backward from it. There is no cap on how many chapters may aim at the same target: a run is as long as it needs to be to reach the peak it was anchored on, however far out that peak sits.
 
-    5. CHOOSE THE ANCHOR DISTANCE BY THE PEAK, NOT BY THE CAP: within that cap, a run does not need several scenes — it needs one peak that can be uncovered in stages. Ask how many honest layers the peak has: an unnamed object, an unnamed person, an unnamed act, a hidden motive? A peak with three things that can be withheld and then named one at a time can carry a full {max_target_reuse}-chapter run. A peak whose whole content is obvious in one sentence cannot, so anchor it 2 chapters out, or 1.
+    5. CHOOSE THE ANCHOR DISTANCE BY THE PEAK, NEVER BY HABIT: a run does not need several scenes — it needs one peak that can be uncovered in stages. Ask how many honest layers the peak has: an unnamed object, an unnamed person, an unnamed act, a hidden motive? A peak with three things that can be withheld and then named one at a time can carry a long run, however many chapters that takes. A peak whose whole content is obvious in one sentence cannot, so anchor it 2 chapters out, or 1 — do not stretch a thin peak just because nothing stops you from reaching further.
        K = N + 1 is often the right answer, not a fallback. A one-chapter run has no later rung to save anything for, so its limit may name more of the peak than any other rung does — which is what makes an immediate tease land. It still keeps one piece back. The reader is a single chapter away, so very little is needed to pull them, and that one withheld piece is what they open the chapter for. Take the next chapter whenever it holds a real peak. The only reason to reach further is that a later chapter holds a BIGGER peak AND the chapters in between can genuinely be spent layering toward it.
 
     6. BRIDGE RELEVANCE: the scene you pick from chapter K must connect to something genuinely present in chapter N — a question chapter N leaves open, a threat it introduces, a promise it makes, a decision it sets in motion, a character it puts at risk. A reader who has read up to the end of chapter N and no further must be able to feel that connection with no extra explanation. Never pair a chapter with a scene that has nothing to do with it just to satisfy the window.
@@ -104,7 +103,13 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
        BOTH SEGMENTS ARE REQUIRED, ALWAYS, IN THIS ORDER: "PERMIT: ... PROHIBIT: ...". Look at all three above — not one stops after the permission. A limit written as permission alone is a defect, not a loose end: the writer treats this field as the authority that outranks every other rule it has, so a limit that forbids nothing authorises everything. Inside each segment, write plainly and list the items; do not repeat a verb stem row after row, and never write the word "reveal" — the labels already say which side you are on.
        THE OUTCOME IS NEVER NAMEABLE, AT ANY RUNG, INCLUDING THE LAST. What the act does to anyone, how they react to it, who it changes, what it costs, how it resolves — these are what the chapter exists to deliver and no rung may spend them. Keep them out of the permission half as well: "a level of violence that stuns everyone watching", "proving she is far more dangerous than she appears", "and she is left in tears" all smuggle the outcome into what the writer is told to name. Name the SETUP — who is in it, where it stands, what it turns on — and forbid the rest explicitly.
 
-    8b. NEVER SPEND THE WHOLE SCENE EARLY: in a run of two or more chapters the first limit is the quietest. If the first precap already names the act, every later one in the run has nothing left and will repeat itself. Check each run from the top: the amount named must only ever increase. (A one-chapter run is the exception — see rule 5.)
+    8b. BUILD EVERY RUN AS A BEAT LADDER: before you write a single limit, break the scene into the small beats that lead into it and make it up, in the order they happen, and list MORE beats than the run has rungs. Then hand the rungs those beats in order, one step per rung, quietest first. {beat_ladder_act_clause}
+       Beats are finer than they first look. One of them crossing a room, a look that will not break, a hand that moves before its owner decides to, a thing said that neither can take back — each is a beat of its own. A scene you can only see as one beat gets a ONE-CHAPTER run; never give it three rungs that say it three times.
+       NO REWORDING: read each limit against the one above it. If a reader given both would picture the same thing, you have written one rung twice — move it on to the next beat. DO NOT say the same act in fresher words, DO NOT reorder the same pieces, and DO NOT add a second beat to a rung to make it feel different from the last.
+       In a run of two or more the first limit never names the act{intimacy_run_act_exception}, and the amount named only ever increases. (A one-chapter run is the exception — see rule 5.)
+
+    8c. A SECRET'S RUNGS ARE HOW CLOSE IT IS, NEVER WHAT IT IS: when the peak is a hidden thing reaching a lead — proof surfacing, a lie coming apart, someone being exposed — ladder the rungs on the ground it still has to cover: it exists; it has left the hands that held it; it is already with someone who means to use it; it is one room away from the lead it will hit. What it turns out to be, the moment it lands, and what it does to either lead stay with the chapter at every rung, the last one included.
+       DO NOT write a limit saying the truth will come out and destroy someone, and DO NOT name the form the proof takes. That is the whole chapter in one line, and every rung after it is left with nothing to name.
 {intimacy_run_note}
     9. DO NOT TEASE WHAT THE READER JUST READ: if the best scene in the window is simply the same event chapter N was already built around, continuing or repeating, pick a different scene. A precap that describes what the reader has just finished reading has no pull.
 
@@ -160,7 +165,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       <target_chapter_id>7</target_chapter_id>
       <dominant_emotion>{emotion_example_1}</dominant_emotion>
       <scene_description>Radha realizes the shop was opened from the inside and turns to find her brother-in-law standing in the doorway watching her.</scene_description>
-      <limit>Say only that the shop is no longer as safe as Radha believes, and that someone close to her already knows more about it than she does. Do not say there is a break-in. Do not name who.</limit>
+      <limit>PERMIT: the shop is no longer as safe as Radha believes, and someone close to her already knows more about it than she does. PROHIBIT: that there has been a break-in, who is behind it, and anything it costs her.</limit>
       <bridge_reasoning>Chapter 4 ends with Radha refusing her brother-in-law the keys, certain that settles it.</bridge_reasoning>
     </mapping>
     <mapping>
@@ -168,7 +173,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       <target_chapter_id>7</target_chapter_id>
       <dominant_emotion>{emotion_example_2}</dominant_emotion>
       <scene_description>Radha realizes the shop was opened from the inside and turns to find her brother-in-law standing in the doorway watching her.</scene_description>
-      <limit>Name the break-in and that the week's takings are gone. Do not say it was opened from the inside, and do not point at anyone.</limit>
+      <limit>PERMIT: the break-in, and the week's takings gone with it. PROHIBIT: that the shop was opened from the inside, who is behind it, and what Radha does when she finds out.</limit>
       <bridge_reasoning>Chapter 5 has her counting those takings and planning what they will cover.</bridge_reasoning>
     </mapping>
     <mapping>
@@ -176,7 +181,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       <target_chapter_id>7</target_chapter_id>
       <dominant_emotion>{emotion_example_3}</dominant_emotion>
       <scene_description>Radha realizes the shop was opened from the inside and turns to find her brother-in-law standing in the doorway watching her.</scene_description>
-      <limit>The lock was never the way in, and she is not alone in the shop when she understands that. Who is standing there, how close to her they are, what she does about it, and what it costs her all stay back.</limit>
+      <limit>PERMIT: the lock was never the way in, and she is not alone in the shop when she understands that. PROHIBIT: who is standing there, how close to her they are, what she does about it, and what it costs her.</limit>
       <bridge_reasoning>Chapter 6 has him asking her twice where she keeps the spare key.</bridge_reasoning>
     </mapping>
 
@@ -189,7 +194,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       <target_chapter_id>12</target_chapter_id>
       <dominant_emotion>{emotion_example_4}</dominant_emotion>
       <scene_description>The woman who has been quietly paying Radha's debts walks into the shop and tells her she was her husband's first wife.</scene_description>
-      <limit>The woman who has quietly been paying her debts walks into the shop and tells Radha to her face what she was to her husband. Do not say what she turns out to have been, what Radha does, or what it means for the shop.</limit>
+      <limit>PERMIT: the woman who has quietly been paying her debts walks into the shop and tells Radha to her face what she was to her husband. PROHIBIT: what she turns out to have been, what Radha does, and what it means for the shop.</limit>
       <bridge_reasoning>Chapter 11 ends with Radha finding the debts already settled and no name on the receipt.</bridge_reasoning>
     </mapping>
 
@@ -215,14 +220,13 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       • Every scene_description is the peak event of the chapter it targets — the moment that chapter exists to deliver, not another scene from it, and never a travel, planning or recap scene.
       • Every scene_description has a LEAD in it — read each one and name which lead it belongs to.
       • Every peak you picked out in step 4 is used as a target_chapter_id. This is the check that most often fails — if a peak is missing, the blueprint teases filler instead of the story's biggest moments.
-      • Your run lengths vary. A column of nothing but {max_target_reuse}-chapter runs, or one with no single-chapter run in it, means you picked distances by the cap rather than by each peak's layers — re-check those anchors against rule 5.
+      • Your run lengths vary — thin peaks get short runs, thick peaks get long ones. A column of nothing but same-length runs, or one with no single-chapter run in it, means you picked distances out of habit rather than from each peak's own layers — re-check those anchors against rule 5.
       • There is exactly one mapping per chapter for chapters 1 to {precap_limit}, and none above.
-      • Every K is within its chapter's window (N < K <= N + {lookahead}) and at most {chapter_count}{opening_run_window_exception}.
-      • Every chapter from an anchor's first use up to K-1 carries that SAME K. Read your own target column top to bottom: it must look like, example: 4,4,4,7,7,9,10 — a staircase that only steps up on the chapter that reached the previous anchor, and never shows the same value more than {max_target_reuse} times{opening_run_cap_exception}. Steps of one chapter (9 then 10) are fine; what this check exists to catch is a target changing to a new value before the old one was reached. Fix it.
+      • Every K is ahead of its own chapter (N < K) and at most {chapter_count} — no other ceiling applies to how far out it sits.
+      • Every chapter from an anchor's first use up to K-1 carries that SAME K. Read your own target column top to bottom: it must look like, example: 4,4,4,7,7,9,10 — a staircase that only steps up on the chapter that reached the previous anchor, however many times a value repeats. Steps of one chapter (9 then 10) are fine; what this check exists to catch is a target changing to a new value before the old one was reached. Fix it.
       • Every mapping in a run carries the SAME scene_description, word for word.
       • No two consecutive chapters carry the same dominant_emotion, and none appears more than twice in any five consecutive chapters.
-      • No target chapter is used by more than {max_target_reuse} chapters{opening_run_cap_exception}.
-      • Each run's limits only ever open up — never the same amount twice, never narrowing, and in a run of two or more the first one never names the act{intimacy_run_act_exception}.
+      • Each run's limits only ever open up — never the same amount twice, never narrowing, and in a run of two or more the first one never names the act{intimacy_run_act_exception}. Read the run's PERMIT segments one under the other: each must put a DIFFERENT picture in the reader's head than the one above it. Two rungs describing the same moment in different words is a defect however good each one reads.
       • Every limit, at every rung, carries both a PERMIT: and a PROHIBIT: segment, and the PROHIBIT always rules out the outcome — what the act costs, how anyone reacts to it, how it resolves. A limit that is pure permission is a defect: rewrite it before output.
       • No limit's PERMIT segment states a consequence. Strip any "...which stuns them", "...proving she is X", "...leaving her in tears" and keep only what can be seen at the moment itself.
       • Every run's FINAL limit still keeps one piece of the act back{intimacy_run_act_exception}. This is a check for partial revelation, not for silence — that limit is meant to name a great deal. Read it on its own and ask whether a reader given only that would still not know the one thing that makes the moment land: which of them it turns out to be, what it says, which way it goes. If they would already know it, the peak has been spent and the chapter has nothing left.
@@ -299,12 +303,12 @@ GENRE_RANKING_NOTES = {
 # ────────────────────
 # GENRE-SPECIFIC OPENING-RUN AND UNKNOWN-LEAD NOTES
 # ────────────────────
-# Empty for the generic prompt. Romance is the one genre whose opening run is
-# allowed to reach past the ordinary lookahead (see pipeline/arc_planning.py::
-# enforce_constraints, exempt_first_run) and whose leads may appear before they
-# are formally introduced. These never touch the revelation (<limit>) rules or
-# the bridge-relevance rule — only whether a far-off target, or an unnamed
-# lead, may be picked at all.
+# Empty for the generic prompt. Romance is the one genre that actively directs
+# the opening run to search every given chapter for the leads' first or peak
+# intimate moment, and whose leads may appear before they are formally
+# introduced. These never touch the revelation (<limit>) rules or the
+# bridge-relevance rule — only how the target for chapter 1 is chosen, or
+# whether an unnamed lead may be picked at all.
 
 GENRE_OPENING_RUN_NOTES = {
     "romance": ROMANCE_OPENING_RUN_NOTE,
@@ -316,6 +320,18 @@ GENRE_UNKNOWN_LEAD_NOTES = {
 
 GENRE_INTIMACY_RUN_NOTES = {
     "romance": ROMANCE_INTIMACY_RUN_NOTE,
+}
+
+# Rule 8b's clause on which beats a run may spend. The generic version stops
+# every run before the act; a genre with a peak type whose beats ARE the act
+# (romance intimacy) replaces it with one that says what those runs do instead.
+DEFAULT_BEAT_LADDER_ACT_CLAUSE = (
+    "Only the beats BEFORE the act are yours to spend; the act and everything after it stay "
+    "with the chapter, the last rung included."
+)
+
+GENRE_BEAT_LADDER_ACT_CLAUSES = {
+    "romance": ROMANCE_BEAT_LADDER_ACT_CLAUSE,
 }
 
 GENRE_EMOTIONS = {
@@ -344,10 +360,8 @@ ALL_EMOTION_LABELS = frozenset(DEFAULT_EMOTION_LABELS).union(*GENRE_EMOTION_LABE
 
 
 def build_blueprint_prompt(
-    lookahead: int,
     precap_limit: int,
     chapter_count: int,
-    max_target_reuse: int,
     genre: str | None = None,
 ) -> str:
     event_types_block = GENRE_EVENT_TYPES.get((genre or "").lower(), DEFAULT_EVENT_TYPES)
@@ -357,27 +371,18 @@ def build_blueprint_prompt(
     opening_run_note = GENRE_OPENING_RUN_NOTES.get((genre or "").lower(), "")
     unknown_lead_note = GENRE_UNKNOWN_LEAD_NOTES.get((genre or "").lower(), "")
     intimacy_run_note = GENRE_INTIMACY_RUN_NOTES.get((genre or "").lower(), "")
-    # Derived, not a separate genre dict: the self-check list only needs to carve
-    # out the exemption where one was actually granted above, so whether these
-    # two phrases appear follows opening_run_note itself rather than genre.
-    has_opening_run_exception = bool(opening_run_note.strip())
-    opening_run_window_exception = (
-        " — except the exempt opening run above, which only has to stay at or below {chapter_count}"
-        if has_opening_run_exception else ""
+    beat_ladder_act_clause = GENRE_BEAT_LADDER_ACT_CLAUSES.get(
+        (genre or "").lower(), DEFAULT_BEAT_LADDER_ACT_CLAUSE
     )
-    opening_run_cap_exception = " (the exempt opening run aside)" if has_opening_run_exception else ""
     has_intimacy_run_exception = bool(intimacy_run_note.strip())
     intimacy_run_act_exception = (
-        " (except an INTIMACY & CLOSENESS run using the exception above, which names one beat per rung "
-        "starting from the first)"
+        " (except an INTIMACY & CLOSENESS run using the exception above, which gives each rung one beat of the "
+        "closeness, in order, and holds back only the beats after it)"
         if has_intimacy_run_exception else ""
     )
     prompt = PRECAP_BLUEPRINT_SYSTEM_PROMPT
     for n, tag in enumerate(examples["tags"], start=1):
         prompt = prompt.replace(f"{{emotion_example_{n}}}", tag)
-    # Block substitutions run first because some blocks (the romance opening-run
-    # note) carry their own {lookahead}-style placeholders — those must still be
-    # live when the scalar replacements below run over them.
     prompt = (
         prompt.replace("{event_types_block}", event_types_block)
         .replace("{emotions_block}", emotions_block)
@@ -385,15 +390,12 @@ def build_blueprint_prompt(
         .replace("{opening_run_note}", opening_run_note)
         .replace("{unknown_lead_note}", unknown_lead_note)
         .replace("{intimacy_run_note}", intimacy_run_note)
+        .replace("{beat_ladder_act_clause}", beat_ladder_act_clause)
         .replace("{intimacy_run_act_exception}", intimacy_run_act_exception)
-        .replace("{opening_run_window_exception}", opening_run_window_exception)
-        .replace("{opening_run_cap_exception}", opening_run_cap_exception)
     )
     return (
-        prompt.replace("{lookahead}", str(lookahead))
-        .replace("{precap_limit}", str(precap_limit))
+        prompt.replace("{precap_limit}", str(precap_limit))
         .replace("{chapter_count}", str(chapter_count))
-        .replace("{max_target_reuse}", str(max_target_reuse))
         .replace("{emotion_repeat_example}", examples["repeat"])
         .replace("{emotion_run_example}", examples["run"])
     )

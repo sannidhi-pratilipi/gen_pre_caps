@@ -12,8 +12,11 @@ load_dotenv()
 
 # MODEL = "openai/gpt-5.4-nano"
 MODEL = "google-vertex/google-gemini-3.8-flash"
-# MODEL="openai/gpt-5.6-luna"
 FALLBACK_MODEL = "openai/gpt-5-mini"
+
+# Critique passes judge hooks written by MODEL above, so they run on a
+# different model than the one being judged.
+CRITIQUE_MODEL = "openai/gpt-5.6-luna"
 
 _BASE_METADATA = {
     "env": os.environ.get("ENV", "local"),
@@ -111,14 +114,17 @@ def _call_model(model: str, messages, extra_metadata: dict | None = None) -> str
     return content
 
 
-def complete(messages, retries: int = 5, metadata: dict | None = None) -> str:
+def complete(
+    messages, retries: int = 5, metadata: dict | None = None, model: str | None = None
+) -> str:
+    model = model or MODEL
     last_exc: Exception = RuntimeError("No attempts made")
     for attempt in range(retries):
         try:
-            return _call_model(MODEL, messages, metadata)
+            return _call_model(model, messages, metadata)
         except ContentFilteredError:
             print(
-                f"Gemini filtered content, retrying with fallback model {FALLBACK_MODEL}..."
+                f"{model} filtered content, retrying with fallback model {FALLBACK_MODEL}..."
             )
             return _call_model(FALLBACK_MODEL, messages, metadata)
         except BadRequestError:

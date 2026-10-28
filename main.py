@@ -7,7 +7,6 @@ from pathlib import Path
 
 from ingestion.ingest_chapter import ChapterIngestor
 from pipeline.arc_planning import (
-    LOOKAHEAD,
     BlueprintParseError,
     blueprint_from_xml,
     plan_precaps,
@@ -16,7 +15,9 @@ from pipeline.runner import process_chapter
 
 # Precaps are generated for chapters 1..PRECAP_LIMIT only. Chapters past that
 # are still fetched and planned over, because a precap at chapter
-# PRECAP_LIMIT may target a scene up to LOOKAHEAD chapters ahead.
+# PRECAP_LIMIT may target a scene in any later fetched chapter — there is no
+# fixed lookahead distance, so CHAPTER_LIMIT just needs to exceed PRECAP_LIMIT
+# by enough that late precaps still have chapters ahead to target.
 PRECAP_LIMIT = 10
 CHAPTER_LIMIT = 15
 
@@ -110,16 +111,14 @@ def main(argv=None):
             mappings, rejected = blueprint_from_xml(
                 existing_xml,
                 chapter_count=len(chapters),
-                lookahead=LOOKAHEAD,
                 precap_limit=precap_limit,
-                genre=genre,
             )
             if mappings:
                 blueprint_xml = existing_xml
                 print(f"Pass 1 skipped — reusing blueprint XML: {blueprint_file}")
             else:
                 # parsed, but nothing survived the constraint check — e.g. the
-                # file was planned for a different lookahead or chapter count
+                # file was planned for a different chapter count
                 print("Stored blueprint has no usable mappings — planning again")
         except BlueprintParseError as e:
             # a truncated or hand-broken file is not a reason to stop; fall
@@ -129,7 +128,7 @@ def main(argv=None):
     if blueprint_xml is None:
         try:
             mappings, rejected, blueprint_xml = plan_precaps(
-                chapters, language=language, lookahead=LOOKAHEAD, precap_limit=precap_limit,
+                chapters, language=language, precap_limit=precap_limit,
                 genre=genre,
             )
         except BlueprintParseError as e:

@@ -1,4 +1,4 @@
-from llm.tfy_client import complete
+from llm.tfy_client import CRITIQUE_MODEL, complete
 from pipeline.arc_planning import ChapterMapping
 from prompts.critique_prompt import build_critique_prompt, build_predecessor_block
 from prompts.hook_prompt import build_bridge_context, build_hook_prompt
@@ -68,7 +68,7 @@ def critique_hook(
         },
         {"role": "user", "content": f"{content}{predecessors}\n\nHook to evaluate:\n{hook}"},
     ]
-    response = complete(messages, metadata=metadata)
+    response = complete(messages, metadata=metadata, model=CRITIQUE_MODEL)
 
     passes = "VERDICT: PASS" in response.upper()
     reason = ""
