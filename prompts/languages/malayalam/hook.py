@@ -3,7 +3,7 @@
 
 MALAYALAM_GUIDANCE = """
     ──────────────────── 
-    MALAYALAM-SPECIFIC PRIORITIES (HIGHEST PRIORITY)
+    MALAYALAM-SPECIFIC PRIORITIES (these override the base rules above)
     ────────────────────
 
     • NOTHING IN THIS BLOCK LICENSES A FULL REVEAL. These priorities govern how Malayalam SOUNDS — register, verb form, sentence length, the spine, the closing. WHAT THIS PRECAP MUST HOLD BACK remains the authority on how much you may give away, and the OUTCOME is never yours to give, at any rung of any run. The question to finish on is not "have I said enough?" but "have I left the reader still needing to open the chapter?" — if a reader could retell the scene from your precap, you have handed it over.
@@ -28,4 +28,31 @@ MALAYALAM_GUIDANCE = """
       – a middle sentence that restates the first from another angle instead of advancing it (അനം ഹമീദിക്ക് ഭയം തോന്നുന്നു, after the danger she is in has already been named);
       – a closing line that lets go of the concrete thing just named and ends on something general enough to sit at the end of any other chapter's precap. The close lands on what the sentence before it put down.
     • Stay gripping and tense, but never at the cost of clarity. If a sentence feels crowded, break it or cut it down.
+    """
+
+
+# Appended by prompts/hook_prompt.py::build_hook_prompt only for Malayalam romance, at the
+# very end of the prompt. Fits the romance voice into Malayalam's own limits (20-25 words,
+# short sentences, forward form for the coming moment) and never relaxes them.
+MALAYALAM_ROMANCE_GUIDANCE = """
+    ────────────────────
+    MALAYALAM ROMANCE VOICE (sensual, inside Malayalam's own limits)
+    ────────────────────
+
+    • The romance voice above applies in full, and it is carried inside the Malayalam limits: 20-25 words, short sentences, plain spoken words, and the forward form for the coming moment. Nothing here lengthens a sentence or lets in a heavy word.
+    • Make it sensual through the body and the pull, in simple words: a hand tightening on a waist, a breath on a cheek, eyes dropping to lips, a touch in hair, a body drawn close. Show the touch plainly in the forward form (...മുറുകാൻ പോകുന്നു, ...തൊടും), never as a bare mood and never graphic.
+    • Put what the lead cannot resist in ONE short phrase: the want they cannot hide, the pull they lose against. Let the forward form carry the touch and the want together, so one sentence does both.
+    • Keep the ground sentence very short (about 8 words), in the ongoing present, so the beat gets the room.
+    • Vary the focus from the precap before (eyes, breath, hands, hair, closeness, teasing). In a care or comfort scene the pull is tenderness, still shown through touch.
+
+    THREE REGISTER MODELS (written for this prompt, not platform precaps; study the build and voice, never the content, and never reuse their names):
+
+    1. ATTRACTION, CLOSED ON A STATEMENT:
+    "അകലം പാലിക്കാൻ ഉറപ്പിച്ചിരിക്കുകയാണ് അനുപമ. പക്ഷേ ആ രാത്രി അർജുന്റെ കൈ അവളുടെ അരക്കെട്ടിൽ മുറുകും, അവന്റെ ശ്വാസം അവളുടെ കവിളിൽ തൊടും."
+
+    2. TENDER CARE, CLOSED ON A QUESTION:
+    "ആരുടെ മുന്നിലും തളരില്ലെന്ന് ഉറപ്പിച്ചിരിക്കുകയാണ് രോഹൻ. പക്ഷേ മീരയുടെ തല അവന്റെ തോളിൽ ചായും, അവന്റെ കൈ അവളുടെ മുടിയിൽ കോർക്കും. അവൻ അവളെ വിടാൻ മടിക്കുന്നത് എന്തുകൊണ്ടാണ്?"
+
+    3. POSSESSIVE PULL, CLOSED ON THE STAKE:
+    "മറ്റൊരാളോട് ചിരിക്കുന്ന ദിയയെ നോക്കി നിൽക്കുകയാണ് ആദി. പക്ഷേ ആ രാത്രി അവൻ അവളെ തന്നിലേക്ക് ചേർത്തുപിടിക്കും, ഇതുവരെ ഒളിപ്പിച്ച ആഗ്രഹം അവന്റെ നോട്ടത്തിൽ തെളിയും."
     """

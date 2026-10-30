@@ -32,12 +32,14 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
 
     You are given chapters 1 to {chapter_count}, but you must produce a mapping ONLY for chapters 1 to {precap_limit}. The chapters after {precap_limit} are included solely so they can be used as targets — they are the runway that lets chapter {precap_limit} still reach forward. Never output a mapping whose chapter_id is above {precap_limit}, and never leave one out below it: exactly {precap_limit} mappings, one per chapter, in ascending order.
 
+    WRITE THE ENTIRE OUTPUT IN ENGLISH, whatever language the chapters are in: every field, every sentence, every explanation. The only text that stays in the chapters' own script is a proper noun copied from them (see rule 12). DO NOT write any planning field in Hindi, Malayalam or any other language.
+
     For each of those chapters N, output:
       - target_chapter_id (K): the later chapter the precap reaches forward to. K may be the very next chapter, N + 1 — see rule 5.
       - scene_description: chapter K's PEAK EVENT — the one moment chapter K exists to deliver, as you identified it in step 2. Not an incidental scene from K, not a summary of K. Every chapter in the same run shares this — it is a property of the anchor, not of N.
       - limit: written in two labelled segments, PERMIT: and PROHIBIT:. PERMIT names the most of that scene this precap may touch; PROHIBIT names what it must keep from the reader. Both segments are required. The permission is a ceiling, never a quota to fill. This is the only field that changes as the run counts down.
       - dominant_emotion: the ONE feeling this precap is built to land.
-      - bridge_reasoning: THE ONE CONCRETE THING IN CHAPTER N the precap will stand on, written as a plain fact about chapter N and nothing else — what a character said, swore or demanded; a decision taken or refused; a question it ended on; an object or letter it produced; a belief it left someone holding. Never an explanation of why the pairing works.
+      - bridge_reasoning: THE ONE CONCRETE THING IN CHAPTER N the precap will stand on, written as a plain fact about chapter N and nothing else — what a character said, swore or demanded; a decision taken or refused; a question it ended on; an object or letter it produced; a belief it left someone holding; or the stance one lead is standing in toward the other, where chapter N shows it. Never an explanation of why the pairing works.
           GOOD: "Chapter 4 ends with Radha refusing her brother-in-law the keys, certain that settles it."
           BAD:  "Chapter 7 shows the families traveling, and this scene is the high point of that arrival."                      <- justifies the pairing, names nothing usable
           BAD:  "Chapter 1 establishes David's reckless nature."  <- a trait, true of every chapter Test it: strike every clause starting "this scene...", "making this...", "which is why...". What remains must still be a complete, concrete fact. It is per-chapter — chapters in one run share a scene but stand on different things, so these differ down a run.
@@ -230,7 +232,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       • Every limit, at every rung, carries both a PERMIT: and a PROHIBIT: segment, and the PROHIBIT always rules out the outcome — what the act costs, how anyone reacts to it, how it resolves. A limit that is pure permission is a defect: rewrite it before output.
       • No limit's PERMIT segment states a consequence. Strip any "...which stuns them", "...proving she is X", "...leaving her in tears" and keep only what can be seen at the moment itself.
       • Every run's FINAL limit still keeps one piece of the act back{intimacy_run_act_exception}. This is a check for partial revelation, not for silence — that limit is meant to name a great deal. Read it on its own and ask whether a reader given only that would still not know the one thing that makes the moment land: which of them it turns out to be, what it says, which way it goes. If they would already know it, the peak has been spent and the chapter has nothing left.
-      • Every bridge_reasoning is a concrete fact about its own chapter N — not a trait, a mood, or a justification of the pairing — and the rows differ from each other down a run.
+      • Every bridge_reasoning is a concrete fact about its own chapter N — not a bare trait, a mood, or a justification of the pairing — and the rows differ from each other down a run. A stance chapter N actually shows (what one lead cannot say to the other, will not admit, or thinks of them) is a concrete fact and passes.
       • Every character, place and named object inside your fields is spelled in the chapter's own script, exactly as the chapter text spells it — no Romanised names anywhere. Fix any that fail, then output.
 
     Output nothing outside the <blueprint> root element. No markdown, no commentary.
@@ -376,8 +378,8 @@ def build_blueprint_prompt(
     )
     has_intimacy_run_exception = bool(intimacy_run_note.strip())
     intimacy_run_act_exception = (
-        " (except an INTIMACY & CLOSENESS run using the exception above, which gives each rung one beat of the "
-        "closeness, in order, and holds back only the beats after it)"
+        " (except a run on a romantic moment between the leads, using the exception above, which gives every rung one "
+        "beat of the closeness in order, the first rung included, and holds back only the beats after it)"
         if has_intimacy_run_exception else ""
     )
     prompt = PRECAP_BLUEPRINT_SYSTEM_PROMPT

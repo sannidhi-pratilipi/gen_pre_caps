@@ -1,4 +1,4 @@
-from llm.tfy_client import CRITIQUE_MODEL, complete
+from llm.tfy_client import CRITIQUE_MODEL, HOOK_MODEL, complete
 from pipeline.arc_planning import ChapterMapping
 from prompts.critique_prompt import build_critique_prompt, build_predecessor_block
 from prompts.hook_prompt import build_bridge_context, build_hook_prompt
@@ -37,7 +37,7 @@ def generate_hook(
             "content": _chapter_content(chapter_read_text, target_chapter_text, mapping, bridge_context),
         },
     ]
-    return complete(messages, metadata=metadata)
+    return complete(messages, metadata=metadata, model=HOOK_MODEL)
 
 
 def critique_hook(
@@ -108,4 +108,4 @@ def rewrite_hook(
             ),
         },
     ]
-    return complete(messages, metadata=metadata)
+    return complete(messages, metadata=metadata, model=HOOK_MODEL)
