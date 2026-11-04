@@ -44,6 +44,7 @@ MALAYALAM_ROMANCE_GUIDANCE = """
     • Put what the lead cannot resist in ONE short phrase: the want they cannot hide, the pull they lose against. Let the forward form carry the touch and the want together, so one sentence does both.
     • Keep the ground sentence very short (about 8 words), in the ongoing present, so the beat gets the room.
     • Vary the focus from the precap before (eyes, breath, hands, hair, closeness, teasing). In a care or comfort scene the pull is tenderness, still shown through touch.
+    • Tell every action with the feeling it is done with, in your own way: lean most on വയറ്റിൽ ചിത്രശലഭങ്ങൾ പറക്കുന്ന പോലെ, ദേഹത്തിലൂടെ ഒരു തരിപ്പ് പാഞ്ഞു, സ്വയം തടയാനാവാതെ; also സ്നേഹത്തോടെ, അമ്പരന്ന്, വിറയ്ക്കുന്ന കൈകളോടെ. Pick the one that fits the moment and change it from precap to precap. DO NOT write an action bare.
 
     THREE REGISTER MODELS (written for this prompt, not platform precaps; study the build and voice, never the content, and never reuse their names):
 

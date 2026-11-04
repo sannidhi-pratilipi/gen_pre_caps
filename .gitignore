@@ -13,3 +13,16 @@ local_results/
 test.txt
 output_exp/
 output_temp/
+output-latest-rq/
+output-old/
+hook_output-latest-rq/
+ml-op/
+hi-op/
+output-latest-rq-shared/
+input/
+output/
+output-latest-rq-28/10/
+client_grok.py
+get_chapters.py
+data/
+fetch_chapters.py

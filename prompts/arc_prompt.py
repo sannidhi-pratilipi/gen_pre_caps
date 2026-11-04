@@ -28,7 +28,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
 
     Your job is not to write precaps. Your job is to decide, for every chapter, WHICH upcoming scene each precap should be built on. A later writer receives only two chapters — the one the reader just finished, and the one you point at — plus the scene you name. It cannot see anything else. Everything it needs must be in your choice.
 
-    EVERY PEAK MUST BE ABOUT THE HERO OR HEROINE. These are the leads — the one or two main characters the serial is about. Find them first, before you look for a single peak. A peak must be about something the hero or heroine does, decides, faces, discovers, loses, or that happens to them. A scene between two side characters is NOT a peak, no matter how dramatic it is. If a side-character scene matters, it is only because of what it does to the hero or heroine — use that effect as the peak, not the side characters' own scene. Do not pick a scene just because it is exciting. If the hero or heroine is not in it, it is not a peak for this blueprint.
+    EVERY PEAK MUST BE ABOUT THE HERO OR HEROINE. These are the leads — the main characters the serial is about, usually two. Find them first, before you look for a single peak. A peak must be about something the hero or heroine does, decides, faces, discovers, loses, or that happens to them. A scene between two side characters is NOT a peak, no matter how dramatic it is. If a side-character scene matters, it is only because of what it does to the hero or heroine — use that effect as the peak, not the side characters' own scene. Do not pick a scene just because it is exciting. If the hero or heroine is not in it, it is not a peak for this blueprint.
 
     You are given chapters 1 to {chapter_count}, but you must produce a mapping ONLY for chapters 1 to {precap_limit}. The chapters after {precap_limit} are included solely so they can be used as targets — they are the runway that lets chapter {precap_limit} still reach forward. Never output a mapping whose chapter_id is above {precap_limit}, and never leave one out below it: exactly {precap_limit} mappings, one per chapter, in ascending order.
 
@@ -39,10 +39,11 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       - scene_description: chapter K's PEAK EVENT — the one moment chapter K exists to deliver, as you identified it in step 2. Not an incidental scene from K, not a summary of K. Every chapter in the same run shares this — it is a property of the anchor, not of N.
       - limit: written in two labelled segments, PERMIT: and PROHIBIT:. PERMIT names the most of that scene this precap may touch; PROHIBIT names what it must keep from the reader. Both segments are required. The permission is a ceiling, never a quota to fill. This is the only field that changes as the run counts down.
       - dominant_emotion: the ONE feeling this precap is built to land.
-      - bridge_reasoning: THE ONE CONCRETE THING IN CHAPTER N the precap will stand on, written as a plain fact about chapter N and nothing else — what a character said, swore or demanded; a decision taken or refused; a question it ended on; an object or letter it produced; a belief it left someone holding; or the stance one lead is standing in toward the other, where chapter N shows it. Never an explanation of why the pairing works.
-          GOOD: "Chapter 4 ends with Radha refusing her brother-in-law the keys, certain that settles it."
+      - bridge_reasoning: THE THING IN CHAPTER N THAT LEADS INTO THE TARGET SCENE — the event or the feeling that scene pays off, escalates or answers, written as a plain fact about chapter N and nothing else: what a lead said, swore or demanded; a decision taken or refused; an object or letter it produced; a belief it left someone holding; or the stance one lead is standing in toward the other, where chapter N shows it. NOT a summary of how chapter N ends — take the ending only when the ending is what connects. Never an explanation of why the pairing works, and never a fact that fights the scene: a lead walking away, leaving the other behind, or hunting for someone the scene has them standing with cannot lead into it.
+          GOOD: "Radha refuses her brother-in-law the shop keys, certain that settles it."
           BAD:  "Chapter 7 shows the families traveling, and this scene is the high point of that arrival."                      <- justifies the pairing, names nothing usable
-          BAD:  "Chapter 1 establishes David's reckless nature."  <- a trait, true of every chapter Test it: strike every clause starting "this scene...", "making this...", "which is why...". What remains must still be a complete, concrete fact. It is per-chapter — chapters in one run share a scene but stand on different things, so these differ down a run.
+          BAD:  "Chapter 1 establishes David's reckless nature."  <- a trait, true of every chapter
+          Test it: strike every clause starting "this scene...", "making this...", "which is why...". What remains must still be a complete, concrete fact. It is per-chapter — chapters in one run share a scene but stand on different things, so these differ down a run.
 
     ──────────────────── 
     HOW TO WORK (SILENT — DO NOT OUTPUT THIS)
@@ -72,8 +73,9 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
     2. STICKY ANCHOR — THE MOST IMPORTANT RULE: a precap is a promise. When chapter A points at chapter K, the reader starts waiting for chapter K. You must therefore keep pointing at K from EVERY chapter from A up to K-1. Only once the reader has actually reached K may the target move on.
        Concretely: if chapter 1 targets chapter 4, then chapter 2 targets 4 and chapter 3 targets 4. Chapter 4 is the first chapter allowed to pick a new anchor.
        NEVER abandon an unreached anchor. Going 1 -> 4, then 2 -> 6 skips straight past the thing you just promised, and the reader is left asking what happened to chapter 4. A blueprint that does this is wrong even if every individual pairing looks good.
+       ONE EXCEPTION: chapter K-1, the last chapter before the anchor is reached, MAY take a new target instead of K. Only K-1, never any earlier chapter.
 
-    3. HORIZON SHIFT ONLY AFTER PAYOFF: the target may only increase on a chapter that has reached or passed the previous anchor. The result is a run of anchors, each held until it lands: 1,2,3 -> 4, then 4,5,6 -> 7, then 7,8 -> 9, and so on. The target never moves backward.
+    3. HORIZON SHIFT ONLY AFTER PAYOFF: the target may only increase on a chapter that has reached or passed the previous anchor, or on chapter K-1 (see rule 2). The result is a run of anchors, each held until it lands: 1,2,3 -> 4, then 4,5,6 -> 7, then 7,8 -> 9, and so on. The target never moves backward.
 
     4. EVERY CHOSEN PEAK BECOMES AN ANCHOR: every chapter you picked out in step 4 (RANK THE PEAKS) must appear as a target_chapter_id somewhere. If one does not, you have let the staircase drift past the story's own peak — go back and re-plan backward from it. There is no cap on how many chapters may aim at the same target: a run is as long as it needs to be to reach the peak it was anchored on, however far out that peak sits.
 
@@ -168,7 +170,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       <dominant_emotion>{emotion_example_1}</dominant_emotion>
       <scene_description>Radha realizes the shop was opened from the inside and turns to find her brother-in-law standing in the doorway watching her.</scene_description>
       <limit>PERMIT: the shop is no longer as safe as Radha believes, and someone close to her already knows more about it than she does. PROHIBIT: that there has been a break-in, who is behind it, and anything it costs her.</limit>
-      <bridge_reasoning>Chapter 4 ends with Radha refusing her brother-in-law the keys, certain that settles it.</bridge_reasoning>
+      <bridge_reasoning>Chapter 4 has Radha refusing her brother-in-law the keys, certain that settles it.</bridge_reasoning>
     </mapping>
     <mapping>
       <chapter_id>5</chapter_id>
@@ -197,7 +199,7 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       <dominant_emotion>{emotion_example_4}</dominant_emotion>
       <scene_description>The woman who has been quietly paying Radha's debts walks into the shop and tells her she was her husband's first wife.</scene_description>
       <limit>PERMIT: the woman who has quietly been paying her debts walks into the shop and tells Radha to her face what she was to her husband. PROHIBIT: what she turns out to have been, what Radha does, and what it means for the shop.</limit>
-      <bridge_reasoning>Chapter 11 ends with Radha finding the debts already settled and no name on the receipt.</bridge_reasoning>
+      <bridge_reasoning>Chapter 11 has Radha finding the debts already settled, with no name on the receipt.</bridge_reasoning>
     </mapping>
 
     ──────────────────── 
@@ -225,14 +227,14 @@ PRECAP_BLUEPRINT_SYSTEM_PROMPT = """
       • Your run lengths vary — thin peaks get short runs, thick peaks get long ones. A column of nothing but same-length runs, or one with no single-chapter run in it, means you picked distances out of habit rather than from each peak's own layers — re-check those anchors against rule 5.
       • There is exactly one mapping per chapter for chapters 1 to {precap_limit}, and none above.
       • Every K is ahead of its own chapter (N < K) and at most {chapter_count} — no other ceiling applies to how far out it sits.
-      • Every chapter from an anchor's first use up to K-1 carries that SAME K. Read your own target column top to bottom: it must look like, example: 4,4,4,7,7,9,10 — a staircase that only steps up on the chapter that reached the previous anchor, however many times a value repeats. Steps of one chapter (9 then 10) are fine; what this check exists to catch is a target changing to a new value before the old one was reached. Fix it.
+      • Every chapter from an anchor's first use up to K-1 carries that SAME K. Read your own target column top to bottom: it must look like, example: 4,4,4,7,7,9,10 — a staircase that only steps up on the chapter that reached the previous anchor, however many times a value repeats. Steps of one chapter (9 then 10) are fine; what this check exists to catch is a target changing to a new value before the old one was reached. The only allowed early change is on chapter K-1. Fix it.
       • Every mapping in a run carries the SAME scene_description, word for word.
       • No two consecutive chapters carry the same dominant_emotion, and none appears more than twice in any five consecutive chapters.
       • Each run's limits only ever open up — never the same amount twice, never narrowing, and in a run of two or more the first one never names the act{intimacy_run_act_exception}. Read the run's PERMIT segments one under the other: each must put a DIFFERENT picture in the reader's head than the one above it. Two rungs describing the same moment in different words is a defect however good each one reads.
       • Every limit, at every rung, carries both a PERMIT: and a PROHIBIT: segment, and the PROHIBIT always rules out the outcome — what the act costs, how anyone reacts to it, how it resolves. A limit that is pure permission is a defect: rewrite it before output.
       • No limit's PERMIT segment states a consequence. Strip any "...which stuns them", "...proving she is X", "...leaving her in tears" and keep only what can be seen at the moment itself.
       • Every run's FINAL limit still keeps one piece of the act back{intimacy_run_act_exception}. This is a check for partial revelation, not for silence — that limit is meant to name a great deal. Read it on its own and ask whether a reader given only that would still not know the one thing that makes the moment land: which of them it turns out to be, what it says, which way it goes. If they would already know it, the peak has been spent and the chapter has nothing left.
-      • Every bridge_reasoning is a concrete fact about its own chapter N — not a bare trait, a mood, or a justification of the pairing — and the rows differ from each other down a run. A stance chapter N actually shows (what one lead cannot say to the other, will not admit, or thinks of them) is a concrete fact and passes.
+      • Every bridge_reasoning is a concrete fact about its own chapter N that LEADS INTO the target scene — not a recap of how chapter N ends, not a bare trait, a mood, or a justification of the pairing — and the rows differ from each other down a run. A stance chapter N actually shows (what one lead cannot say to the other, will not admit, or thinks of them) is a concrete fact and passes.
       • Every character, place and named object inside your fields is spelled in the chapter's own script, exactly as the chapter text spells it — no Romanised names anywhere. Fix any that fail, then output.
 
     Output nothing outside the <blueprint> root element. No markdown, no commentary.

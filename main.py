@@ -112,6 +112,7 @@ def main(argv=None):
                 existing_xml,
                 chapter_count=len(chapters),
                 precap_limit=precap_limit,
+                genre=genre,
             )
             if mappings:
                 blueprint_xml = existing_xml
@@ -186,7 +187,13 @@ def main(argv=None):
                 target_chapter_text=chapters[mapping.target_chapter - 1],
                 mapping=mapping,
                 language=language,
-                previous_limit=previous_mapping.limit if same_run else None,
+                # a limit only carries over while the run is still on the same
+                # moment; a romance run may move to another moment of chapter K
+                previous_limit=(
+                    previous_mapping.limit
+                    if same_run and previous_mapping.scene_description == mapping.scene_description
+                    else None
+                ),
                 same_scene_precaps=list(run_precaps),
                 recent_precaps=list(recent_precaps),
                 genre=genre,

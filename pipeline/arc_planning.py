@@ -20,6 +20,16 @@ from prompts.arc_prompt import ALL_EMOTION_LABELS, build_blueprint_prompt
 # dropped to "" so a mis-spelled label cannot silently become the instruction.
 EMOTIONS = ALL_EMOTION_LABELS
 
+# Genres whose runs may tease a different moment from the same target chapter
+# on each rung (romance: a target chapter with several romantic moments spreads
+# them across the run instead of stretching one). For these the scene-drift
+# snap-back in enforce_constraints is skipped.
+MULTI_SCENE_RUN_GENRES = {"romance"}
+
+
+def multi_scene_runs(genre: str | None) -> bool:
+    return (genre or "").lower() in MULTI_SCENE_RUN_GENRES
+
 
 @dataclass
 class ChapterMapping:
@@ -178,6 +188,7 @@ def enforce_constraints(
     chapter_count: int,
     precap_limit: int | None = None,
     force: bool = False,
+    multi_scene: bool = False,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
     """The anchor and monotonicity rules are instructions in the Pass 1
     prompt, so the model can violate them. Re-check every mapping here rather
@@ -219,6 +230,10 @@ def enforce_constraints(
     The structural rules are NOT bypassed: a target that is not ahead of its
     own chapter, or past the last chapter fetched, is still rejected, because
     neither has a chapter text for Pass 2 to read.
+
+    MULTI_SCENE: `multi_scene=True` keeps each row's own scene_description
+    instead of snapping it back to the run's first one — a run may then tease
+    several moments of the same target chapter (see MULTI_SCENE_RUN_GENRES).
 
     Returns the surviving mappings plus (chapter_number, reason) for each
     rejection, so the caller can report what was dropped instead of silently
@@ -294,7 +309,7 @@ def enforce_constraints(
             if anchor is None or early_release or broken:
                 anchor = k
                 anchor_scene = mapping.scene_description
-            elif mapping.scene_description != anchor_scene:
+            elif mapping.scene_description != anchor_scene and not multi_scene:
                 # A run peels back ONE scene, so every chapter in it must name
                 # the same one. Unlike a bad target this is safe to repair: the
                 # whole run shares a target chapter, so the anchor's scene is
@@ -339,6 +354,7 @@ def blueprint_from_xml(
     chapter_count: int,
     precap_limit: int | None = None,
     force: bool = False,
+    genre: str | None = None,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
     """Turn a blueprint XML into mappings, without calling the planner.
 
@@ -355,6 +371,7 @@ def blueprint_from_xml(
         chapter_count,
         precap_limit,
         force=force,
+        multi_scene=multi_scene_runs(genre),
     )
     _report_blueprint(kept)
     return kept, rejected
@@ -396,7 +413,7 @@ def plan_precaps(
     response = complete(
         messages, metadata=_call_metadata("precap_blueprint", language, run_id)
     )
-    kept, rejected = blueprint_from_xml(response, chapter_count, precap_limit)
+    kept, rejected = blueprint_from_xml(response, chapter_count, precap_limit, genre=genre)
     return kept, rejected, response
 
 
