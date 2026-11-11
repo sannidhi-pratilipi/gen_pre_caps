@@ -23,7 +23,7 @@ HOOK_SYSTEM_PROMPT = """
     • TARGET CHAPTER — the full text of a later chapter, which contains the one scene this hook is for. Use nothing from it except that scene.
 
     Under them come labelled notes prepared for this precap alone. Each says what it is; these three bind hardest:
-    • TARGET SCENE — the single upcoming scene this hook must be built on. It has already been chosen for you. Do not substitute a different moment, however exciting — the one exception is the near-duplicate escape under the list of precaps already written for this scene.
+    • TARGET SCENE — the single upcoming scene this hook must be built on. It has already been chosen for you. Do not substitute a different moment, however exciting.
     • WHAT THIS PRECAP MUST HOLD BACK — what stays back, and then the most of that scene you may name. It is the authority whenever any other note seems to say otherwise. It governs how much you name, never whether you keep something back. If it seems to permit naming the whole moment, it has overreached: keep one piece back anyway.
     • DOMINANT EMOTION — the one feeling this precap must land.
 
@@ -309,12 +309,13 @@ GENRE_HOOKS = {
 
 
 # ────────────────────
-# SINGLE-EVENT MODE
+# THE EVENT SERIES
 # ────────────────────
+# Appended to every hook prompt: the few precaps of a series all hint at the SAME later event.
 
-SINGLE_EVENT_HOOK_NOTE = """
+EVENT_HOOK_NOTE = """
     ────────────────────
-    SINGLE-EVENT SERIES
+    EVENT SERIES
     ────────────────────
 
     This precap is one of a few, each shown at the end of a different early chapter, all for the SAME later event. WHAT THIS PRECAP MUST HOLD BACK says which beat of it is yours: hint that beat and no other, and write it with drama.
@@ -331,7 +332,6 @@ SINGLE_EVENT_HOOK_NOTE = """
       DO NOT change place or time without a link.
     • SHOW, DO NOT JUST TEASE, BUT NOT TOO MUCH. These precaps exist to make the reader keep reading until they reach this event, and a precap that holds too much back gives them no reason to. Only a few precaps carry this event.
       Reveal what WHAT THIS PRECAP MUST HOLD BACK permits: the act, who is in it, and one or two concrete details of it (an object, a place, a gesture). Where it is silent on a detail of the act, you may show it.
-      In this series NEVER GIVE AWAY WHAT HAPPENS means the outcome may be HINTED but never STATED: you may point toward how the moment lands, what it changes or what it costs (a threat, a sign, a look that shows where it is heading). DO NOT state it as done or settled.
       DO NOT hint vaguely at something you are allowed to show, and DO NOT pile up details past two.
     • LENGTH: this series may run up to 10 words and one sentence over the range the LANGUAGE section gives, to hold that detail. That is the only part of the LANGUAGE section this note changes.
     • CARRY THE LEAD'S FEELING THROUGH THE WHOLE PRECAP, from the first sentence to the closing question, not only in one line. In every sentence, the closing question included, let the reader feel what the acting lead is feeling (the dread, the ache, the defiance, the longing, the helplessness) in plain, everyday words, tied to what is being done or what they are holding. The closing question must be felt, not just logical: it asks what this costs the lead inside, not only what happens. DO NOT name an emotion as a label ("she felt scared") and DO NOT let any sentence be pure information.
@@ -352,83 +352,29 @@ SINGLE_EVENT_HOOK_NOTE = """
     """
 
 
-def build_hook_prompt(
-    language: str | None = None, genre: str | None = None, single_event: bool = False
-) -> str:
+def build_hook_prompt(language: str | None = None, genre: str | None = None) -> str:
     lang = LANGUAGE_HOOKS.get((language or "").lower(), {})
     gen = GENRE_HOOKS.get((genre or "").lower(), {})
-    unknown_lead_note = gen.get("unknown_lead_note", "")
-    prompt = HOOK_SYSTEM_PROMPT.replace("{unknown_lead_hook_note}", unknown_lead_note)
-    prompt += lang.get("guidance", "") + gen.get("guidance", "")
-    if single_event:
-        prompt += SINGLE_EVENT_HOOK_NOTE
+    prompt = HOOK_SYSTEM_PROMPT.replace("{unknown_lead_hook_note}", gen.get("unknown_lead_note", ""))
+    prompt += lang.get("guidance", "") + gen.get("guidance", "") + EVENT_HOOK_NOTE
     if (genre or "").lower() == "romance":
         prompt += lang.get("romance_examples", "")
     return prompt
 
 
-# Where this precap sits in its anchor run — position and pacing ONLY.
-#
-# It deliberately does not say what to name or withhold: WHAT THIS PRECAP MUST HOLD BACK
-# already does that, and the planner wrote it having read the actual scene,
-# whereas anything here is derived from the distance alone and is blind to the
-# content. When the two were both prescribing content they could contradict each
-# other outright — a distance-4 precap whose reveal legitimately names the object
-# was being told in the same prompt to leave the object alone.
-#
-# What this genuinely knows and the reveal does not: how many precaps still
-# follow this one. Under the sticky-anchor rule a run counts down to its target,
-# so distance - 1 is exactly the number that come after it.
+RUN_POSITION_NOTE = (
+    "Other precaps for this same event are shown at the end of other early chapters, and "
+    "WHAT THIS PRECAP MUST HOLD BACK says how much of it is yours. Show all of what it "
+    "permits and do not add any quietness of your own. You may hint at how the moment lands and "
+    "what it changes, but do not state it: the chapter keeps the payoff."
+)
 
 
-def _run_position_note(mapping, single_event: bool = False) -> str:
-    if single_event:
-        return (
-            "Other precaps for this same event are shown at the end of other early chapters, and "
-            "WHAT THIS PRECAP MUST HOLD BACK says how much of it is yours. Show all of what it "
-            "permits and do not add any quietness of your own. You may hint at how the moment lands and "
-            "what it changes, but do not state it: the chapter keeps the payoff."
-        )
-    followers = mapping.distance - 1
-
-    if followers == 0:
-        return (
-            "This is the LAST precap reaching for this scene — the reader arrives in the very "
-            "next chapter. Nothing comes after you, so this is the fullest look at the scene there "
-            "will be: go as far as WHAT THIS PRECAP MUST HOLD BACK permits and no further. What no "
-            "rung ever spends, this one included, is what the moment does to anyone: how it goes, "
-            "how it ends, and what they feel, say or become because of it. The last precap of a run "
-            "still leaves the chapter its whole payoff."
-        )
-
-    following = "1 more precap" if followers == 1 else f"{followers} more precaps"
-    note = (
-        f"{following} after this one will reach for this SAME scene before the reader gets there, "
-        "and each will be allowed to name more than you are. Pace accordingly: your job is to move "
-        "the reader one step closer, not to arrive."
-    )
-    # followers is distance - 1, and distance has no fixed ceiling any more — a
-    # run is as long as its peak's own layers justify. followers >= 3 is a
-    # heuristic cutoff for "long enough that this rung is genuinely a distant
-    # one," not a boundary tied to any particular run length.
-    if followers >= 3:
-        note += (
-            " You are at the top of the run, so this is the quietest look at the scene there will "
-            "be. Quiet means you NAME less, not that less is at risk: stay on the one thing WHAT "
-            "THIS PRECAP MUST HOLD BACK permits and make what is riding on it plain anyway. "
-            "Curiosity is what you are building, and curiosity with nothing at stake under it is "
-            "not curiosity."
-        )
-    return note + (
-        " WHAT THIS PRECAP MUST HOLD BACK above is the authority on what you may name; if anything "
-        "here seems to pull against it, follow that block."
-    )
 def build_bridge_context(
     mapping,
     previous_limit: str | None = None,
     same_scene_precaps: list[str] | None = None,
     recent_precaps: list[str] | None = None,
-    single_event: bool = False,
 ) -> str:
     """The Pass 1 blueprint row for this chapter (see
     pipeline/arc_planning.py::ChapterMapping) rendered as extra user-message context, plus what the preceding precap in the same anchor run did.
@@ -479,10 +425,10 @@ def build_bridge_context(
             )
 
         parts.append(
-            f"\n\nWHERE THIS PRECAP SITS (internal):\n{_run_position_note(mapping, single_event)}"
+            f"\n\nWHERE THIS PRECAP SITS (internal):\n{RUN_POSITION_NOTE}"
         )
 
-        if single_event and mapping.curiosity:
+        if mapping.curiosity:
             parts.append(
                 "\n\nTHE QUESTION THE READER IS LEFT WITH (internal — the QUESTION is the "
                 "how-or-why the reader should be wondering about getting from the end of CHAPTER "
@@ -492,7 +438,7 @@ def build_bridge_context(
                 f"it):\n{mapping.curiosity}"
             )
 
-        if single_event and mapping.path:
+        if mapping.path:
             parts.append(
                 "\n\nTHE PATH TO THE EVENT (internal — what happens in the chapters the reader "
                 "has not read, in order, that ends in the event. Read it so the flow from CHAPTER "
@@ -508,11 +454,8 @@ def build_bridge_context(
                 "this note only explains why the pairing works and names nothing usable, do not "
                 "paraphrase it: go into CHAPTER JUST READ and pick the thing the coming moment "
                 f"answers yourself):\n{mapping.bridge_reasoning}"
-                + (
-                    "\nIn this series the note also says what in the event that thing runs into. "
-                    "That link is the flow between the two: write it, do not leave it implied."
-                    if single_event else ""
-                )
+                + "\nThe note also says what in the event that thing runs into. "
+                "That link is the flow between the two: write it, do not leave it implied."
             )
 
     if previous_limit:
@@ -535,15 +478,8 @@ def build_bridge_context(
             "Between them they have already spent a set of words, images and angles on it. Yours "
             "must go past ALL of them, not just the last: say something none of them said, and do "
             "not reach again for an image or a phrase any of them already used. If your draft "
-            "would sit unnoticed among these, it is not a new precap.\n"
-            "IF YOU CANNOT GET PAST THEM: when the scene is thin enough that anything you write "
-            "would land as one of these again, do not write the duplicate. Reach PAST the scene to "
-            "the beat it leads straight into in the same TARGET CHAPTER, and hook on that instead. "
-            "Three conditions: it is the NEXT beat in that chapter and not a separate event "
-            "elsewhere in it; it REPLACES the scene as your one promised moment rather than being "
-            "added alongside it; and it must not state or imply how the scene itself turned out. "
-            "If the only way to name it is to say who survived, who won or what was decided, it is "
-            f"barred and you stay on the scene):\n{listed}"
+            "would sit unnoticed among these, it is not a new precap):\n"
+            f"{listed}"
         )
 
     # Same-scene precaps are already listed above; sending them again under a

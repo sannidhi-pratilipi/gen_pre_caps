@@ -16,7 +16,6 @@ def process_chapter(
     recent_precaps: list[str] | None = None,
     run_id: str | None = None,
     genre: str | None = None,
-    single_event: bool = False,
 ) -> str:
     print(
         f"Generating precap for {book_id} "
@@ -41,7 +40,6 @@ def process_chapter(
         same_scene_precaps=same_scene_precaps,
         recent_precaps=recent_precaps,
         genre=genre,
-        single_event=single_event,
     )
 
     for attempt in range(1, MAX_ITERATIONS + 1):
@@ -65,7 +63,6 @@ def process_chapter(
                 same_scene_precaps=same_scene_precaps,
                 recent_precaps=recent_precaps,
                 genre=genre,
-                single_event=single_event,
             )
         if passes:
             break
@@ -84,7 +81,6 @@ def process_chapter(
             same_scene_precaps=same_scene_precaps,
             recent_precaps=recent_precaps,
             genre=genre,
-            single_event=single_event,
         )
 
         # Never let a blank rewrite replace a usable hook.

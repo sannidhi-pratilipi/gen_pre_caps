@@ -1,18 +1,12 @@
 import re
 import xml.etree.ElementTree as ET
-from collections import Counter
 from dataclasses import dataclass, replace
 
 from llm.tfy_client import complete
 from prompts.arc_prompt import ALL_EMOTION_LABELS, build_blueprint_prompt
 
-# There is no fixed cap on a run's length or on how far out its target may
-# sit: under the sticky-anchor rule a run anchored on K covers every chapter
-# from its first use up to K-1, so its length is simply the distance the first
-# chapter of the run reaches. That distance is the planner's call, made from
-# the peak's own layers (rule 5 in the blueprint prompt) and nothing else. The
-# only hard ceiling left is that K must be a chapter whose text was actually
-# fetched (K <= chapter_count).
+# Every precap chapter points at the same event chapter K. K must be above the last
+# precap chapter and a chapter whose text was actually fetched (K <= chapter_count).
 
 # The feeling a precap is built to land. Planned per chapter rather than left to
 # generation, because "don't repeat the last one's emotion" is a constraint
@@ -20,27 +14,15 @@ from prompts.arc_prompt import ALL_EMOTION_LABELS, build_blueprint_prompt
 # dropped to "" so a mis-spelled label cannot silently become the instruction.
 EMOTIONS = ALL_EMOTION_LABELS
 
-# Genres whose runs may tease a different moment from the same target chapter
-# on each rung (romance: a target chapter with several romantic moments spreads
-# them across the run instead of stretching one). For these the scene-drift
-# snap-back in enforce_constraints is skipped.
-MULTI_SCENE_RUN_GENRES = {"romance"}
-
-
-def multi_scene_runs(genre: str | None) -> bool:
-    return (genre or "").lower() in MULTI_SCENE_RUN_GENRES
-
-
 @dataclass
 class ChapterMapping:
     """One row of the Pass 1 blueprint: the precap shown at the end of
-    `chapter_number` is written about `scene_description`, a scene that lives in
-    `target_chapter`.
+    `chapter_number` is written about `scene_description`, the single event that
+    lives in `target_chapter`.
 
-    Every chapter in an anchor run shares ONE `scene_description` — the run does
-    not tease a different moment each time, it peels back the same moment layer
-    by layer. `limit` is what this particular precap must hold back about
-    it, and is the only field that changes down the run."""
+    Every row shares ONE target and ONE `scene_description`. `limit` is how much
+    of the event this particular precap may show, and is the field that changes
+    from row to row."""
 
     chapter_number: int
     target_chapter: int
@@ -53,12 +35,8 @@ class ChapterMapping:
 
     @property
     def distance(self) -> int:
-        """Chapters between this precap and the scene it reaches for. 1 means
-        the reader arrives in the very next chapter.
-
-        A run counts down to its anchor (1->5, 2->5, 3->5, 4->5), so this is
-        also the precap's position in its run: distance - 1 is exactly how many
-        more precaps still reach for the same scene."""
+        """Chapters between this precap and the event. 1 means the reader
+        arrives in the very next chapter."""
         return self.target_chapter - self.chapter_number
 
 
@@ -191,67 +169,22 @@ def enforce_constraints(
     mappings: list[ChapterMapping],
     chapter_count: int,
     precap_limit: int | None = None,
-    force: bool = False,
-    multi_scene: bool = False,
-    single_event: bool = False,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
-    """The anchor and monotonicity rules are instructions in the Pass 1
-    prompt, so the model can violate them. Re-check every mapping here rather
-    than trusting the response. There is no lookahead window and no reuse cap
-    — how far out a target may sit, and how long a run may run, are bounded
-    only by chapter_count (the target must be a chapter whose text was
-    actually fetched); everything else about the distance is left to rule 5 of
-    the prompt (choose the distance from the peak's own layers).
+    """The rules in the Pass 1 prompt can be violated by the model, so re-check
+    every mapping here rather than trusting the response.
 
-    The load-bearing rule is the ANCHOR: once chapter A points at chapter K,
-    every chapter from A up to K-1 must keep pointing at K, and the horizon is
-    only free to move once the reader has actually reached K. Letting chapter A
-    promise chapter 5 and chapter A+1 silently jump to chapter 7 abandons a
-    promise the reader is still holding, which reads as the story dropping its
-    own setup. Enforcing it here rather than only in the prompt means a single
-    stray target cannot desync the whole run behind it.
-
-    ONE-CHAPTER GRACE: the one exception is a chapter exactly one short of the
-    anchor (anchor - n == 1) that names a different target — a near-miss the
-    model drifts into often enough to be worth tolerating. It is treated as an
-    early release rather than a rejection: the old anchor's final chapter loses
-    its own precap, and the new target starts its own run from here. Any larger
-    gap still rejects as before.
-
-    A mapping is rejected — not repaired — when it breaks a rule: its
-    scene_description describes a scene in the target chapter it named, so
-    rewriting the target to a legal value would leave the scene pointing at the
-    wrong chapter. A rejected chapter gets no precap, and critically does not
-    release the anchor, so the chapters after it stay locked on the same
-    promise.
-
-    FORCE: `force=True` keeps the rows the anchor rules would have dropped —
-    a jump past an unreached anchor, or a target that moves backward — and
-    reports each one instead. It is for working on a stored blueprint whose
-    staircase is already broken (an older plan, a hand edit, a window planned
-    without sight of the run before it), where dropping those rows means the
-    chapters simply cannot be generated at all. A forced row starts its own
-    anchor from where it lands, so the rows after it are checked against it.
-    The structural rules are NOT bypassed: a target that is not ahead of its
-    own chapter, or past the last chapter fetched, is still rejected, because
-    neither has a chapter text for Pass 2 to read.
-
-    MULTI_SCENE: `multi_scene=True` keeps each row's own scene_description
-    instead of snapping it back to the run's first one — a run may then tease
-    several moments of the same target chapter (see MULTI_SCENE_RUN_GENRES).
-
-    SINGLE_EVENT: `single_event=True` is the marquee mode (see
-    prompts/arc_prompt.py::MARQUEE_*): every chapter must point at the SAME target,
-    the first one a row names, and that target must be past `precap_limit` — an
-    event inside the chapters that get precaps is no event to promise. A row that
-    names any other target is rejected, and the one-chapter grace never applies.
+    Every chapter must point at the SAME event chapter: the first target a row
+    names. That target must be ahead of its own chapter, past `precap_limit` (an
+    event inside the chapters that get precaps is no event to promise) and a
+    chapter whose text was fetched (<= chapter_count). A row that breaks one of
+    these is rejected, not repaired, because its scene_description describes a
+    scene in the target it named. A row whose scene_description differs from the
+    first row's is repaired, since the whole run shares one target chapter and
+    one scene.
 
     Returns the surviving mappings plus (chapter_number, reason) for each
     rejection, so the caller can report what was dropped instead of silently
     shipping fewer precaps than expected."""
-    # Chapters past precap_limit are fetched only to be aimed at, so they are
-    # not valid sources. Defaulting to chapter_count - 1 keeps the plain
-    # "plan everything that has a chapter after it" behaviour.
     if precap_limit is None:
         precap_limit = chapter_count - 1
     precap_limit = min(precap_limit, chapter_count - 1)
@@ -269,28 +202,16 @@ def enforce_constraints(
         else:
             by_chapter[n] = mapping
 
-    anchor: int | None = None
-    anchor_scene = ""
-    floor = 0
-    drifted: list[tuple[int, str, str]] = []
-    forced: list[tuple[int, str]] = []
     event_chapter: int | None = None
+    event_scene = ""
+    drifted: list[tuple[int, str, str]] = []
 
-    # Walk chapters rather than mappings: a chapter with no surviving mapping
-    # still has to advance the run, or the anchor would outlive its payoff.
     for n in range(1, precap_limit + 1):
-        if anchor is not None and n >= anchor:
-            anchor = None  # the reader has reached it; the horizon is free again
-
         mapping = by_chapter.get(n)
         if mapping is None:
             continue
 
         k = mapping.target_chapter
-        early_release = anchor is not None and k != anchor and anchor - n == 1  # one-chapter grace, see docstring
-
-        # Structural: there is no usable chapter text behind these, so --force
-        # does not reach them.
         if k <= n:
             rejected.append((n, f"target {k} is not ahead of chapter {n}"))
             continue
@@ -299,52 +220,22 @@ def enforce_constraints(
                 (n, f"target {k} is past the last chapter fetched ({chapter_count})")
             )
             continue
-
-        if single_event:
-            if k <= precap_limit:
-                rejected.append(
-                    (n, f"target {k} is inside the chapters that get precaps (1..{precap_limit})")
-                )
-                continue
-            if event_chapter is not None and k != event_chapter:
-                rejected.append(
-                    (n, f"target {k} is not the marquee event's chapter ({event_chapter})")
-                )
-                continue
-            event_chapter = k
-
-        # Staircase: a real defect in the plan, but one whose rows are still
-        # generable, so --force keeps them.
-        broken = ""
-        if anchor is not None and k != anchor and not early_release:
-            broken = (
-                f"jumps to {k} while chapter {anchor} is still promised and unreached — "
-                f"the anchor holds until chapter {anchor}"
+        if k <= precap_limit:
+            rejected.append(
+                (n, f"target {k} is inside the chapters that get precaps (1..{precap_limit})")
             )
-        elif k < floor:
-            broken = f"target {k} moves backward from the previous target ({floor})"
+            continue
+        if event_chapter is not None and k != event_chapter:
+            rejected.append((n, f"target {k} is not the event's chapter ({event_chapter})"))
+            continue
 
-        if broken and not force:
-            rejected.append((n, broken))
-        else:
-            if broken:
-                forced.append((n, broken))
-            # A forced row is an anchor in its own right: the run it breaks into
-            # is the one the rows after it must now match, scene included.
-            if anchor is None or early_release or broken:
-                anchor = k
-                anchor_scene = mapping.scene_description
-            elif mapping.scene_description != anchor_scene and not multi_scene:
-                # A run peels back ONE scene, so every chapter in it must name
-                # the same one. Unlike a bad target this is safe to repair: the
-                # whole run shares a target chapter, so the anchor's scene is
-                # valid for every chapter in it. Repair rather than reject, and
-                # say so, because dropping the row would cost a precap over a
-                # difference Pass 2 cannot even see.
-                drifted.append((n, anchor_scene, mapping.scene_description))
-                mapping = replace(mapping, scene_description=anchor_scene)
-            floor = k
-            kept.append(mapping)
+        if event_chapter is None:
+            event_chapter = k
+            event_scene = mapping.scene_description
+        elif mapping.scene_description != event_scene:
+            drifted.append((n, event_scene, mapping.scene_description))
+            mapping = replace(mapping, scene_description=event_scene)
+        kept.append(mapping)
 
     repeated = [
         (b.chapter_number, b.dominant_emotion)
@@ -358,18 +249,11 @@ def enforce_constraints(
             "— consecutive precaps will land the same feeling"
         )
 
-    if forced:
-        for n, reason in forced:
-            print(
-                f"[blueprint] chapter {n}: kept by --force despite the anchor check — {reason}"
-            )
-
-    if drifted:
-        for n, expected, got in drifted:
-            print(
-                f"[blueprint] chapter {n}: scene drifted from the run's anchor scene — "
-                f"snapped back.\n    run scene: {expected}\n    returned:  {got}"
-            )
+    for n, expected, got in drifted:
+        print(
+            f"[blueprint] chapter {n}: scene drifted from the event's scene — "
+            f"snapped back.\n    event scene: {expected}\n    returned:   {got}"
+        )
 
     return kept, rejected
 
@@ -378,9 +262,6 @@ def blueprint_from_xml(
     response: str,
     chapter_count: int,
     precap_limit: int | None = None,
-    force: bool = False,
-    genre: str | None = None,
-    single_event: bool = False,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
     """Turn a blueprint XML into mappings, without calling the planner.
 
@@ -392,14 +273,7 @@ def blueprint_from_xml(
     Raises BlueprintParseError if the XML holds no usable mappings, so a
     truncated or half-written file falls back to a real planning call instead of
     silently producing no precaps."""
-    kept, rejected = enforce_constraints(
-        _parse_blueprint(response),
-        chapter_count,
-        precap_limit,
-        force=force,
-        multi_scene=multi_scene_runs(genre) and not single_event,
-        single_event=single_event,
-    )
+    kept, rejected = enforce_constraints(_parse_blueprint(response), chapter_count, precap_limit)
     _report_blueprint(kept)
     return kept, rejected
 
@@ -410,22 +284,14 @@ def plan_precaps(
     precap_limit: int | None = None,
     run_id: str | None = None,
     genre: str | None = None,
-    single_event: bool = False,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]], str]:
     """Pass 1: one LLM call over the full chapter text (no summarization step —
-    the planner reads the chapters themselves) that maps every chapter N to a
-    look-ahead target chapter K and the scene inside K to tease.
-
-    Because the whole blueprint comes back in a single response, the planner
-    sees every chapter at once and can pace the targets and the emotions across
-    the series — neither of which a per-chapter call could do.
+    the planner reads the chapters themselves) that picks one event from the
+    chapters after `precap_limit` and maps every precap chapter to it, one new
+    beat each.
 
     `genre` swaps out the peak-event vocabulary in the prompt (see
-    prompts/genre/<genre>/arc_planner.py) — it does not change any of the
-    structural rules (anchors, limits), only what counts as a peak.
-
-    `single_event` is the marquee mode: one event is picked from the chapters
-    after `precap_limit` and every precap hints at it, one new beat each.
+    prompts/genre/<genre>/arc_planner.py).
 
     Returns the kept mappings, the rejections, and the planner's raw response
     so the caller can persist the blueprint XML alongside the hooks."""
@@ -437,28 +303,18 @@ def plan_precaps(
     messages = [
         {
             "role": "system",
-            "content": build_blueprint_prompt(precap_limit, chapter_count, genre, single_event),
+            "content": build_blueprint_prompt(precap_limit, chapter_count, genre),
         },
         {"role": "user", "content": _format_chapters_block(chapters)},
     ]
     response = complete(
         messages, metadata=_call_metadata("precap_blueprint", language, run_id)
     )
-    kept, rejected = blueprint_from_xml(
-        response, chapter_count, precap_limit, genre=genre, single_event=single_event
-    )
+    kept, rejected = blueprint_from_xml(response, chapter_count, precap_limit)
     return kept, rejected, response
 
 
 def _report_blueprint(kept: list[ChapterMapping]) -> None:
-    """How the blueprint paced itself. Advisory — nothing here rejects a
-    mapping."""
-    # Run lengths: under the sticky-anchor rule a run's length is the distance
-    # its first chapter reaches, so the distance spread shows whether runs were
-    # matched to their peaks' own layers or stretched further than they needed.
+    """How far ahead the event sits. Advisory — nothing here rejects a mapping."""
     if kept:
-        spread = Counter(m.distance for m in kept)
-        print(
-            "[blueprint] precap distances: "
-            + ", ".join(f"{d} chapter{'s' if d > 1 else ''} ahead x{spread[d]}" for d in sorted(spread))
-        )
+        print(f"[blueprint] event in chapter {kept[0].target_chapter}, {len(kept)} precaps")

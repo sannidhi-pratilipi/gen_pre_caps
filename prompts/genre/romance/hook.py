@@ -46,7 +46,7 @@ ROMANCE_GUIDANCE = """
       – One lead carries the verbs. The other is who they are close to.
       – EVERY precap for this scene shows the closeness clearly: the physical proximity between the leads (how near they are, what touches, what the acting lead's body does) is plainly on the page, never only a mood or a distance.
       – Where the moment is explicit or graphic, soften it in the writing: a hand finding a waist, a breath caught, eyes closing, a forehead against a shoulder. Suggest it through the chapter's own words for the body and the room. DO NOT write an explicit or graphic account of the contact. Clear and subtle are the same target, not opposites.
-      – Show only the beat WHAT THIS PRECAP MUST HOLD BACK gives this rung, as already happening, continuing the scene from where the earlier precaps stopped.
+      – Show only the beat WHAT THIS PRECAP MUST HOLD BACK gives this precap, as already happening, continuing the scene from where the earlier precaps stopped.
       – Whatever an earlier precap showed is now settled fact. DO NOT describe it again, DO NOT use its wording, and DO NOT ask whether it happens. DO NOT let the close ask whether the beat happened or what it means to them now.
       – Where a beat's weight is what it will change, name that something now stands between them or has been said, never what.
       – Build it in this order: ONE past-tense ground sentence naming the stance the acting lead stands in toward the other (a vow never to trust again, a marriage that is only an arrangement, a betrayal that closed them off); a turn into the scene; the beat itself as plain physical movement; the close.
