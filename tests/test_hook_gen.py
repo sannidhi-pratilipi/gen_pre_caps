@@ -13,6 +13,7 @@ from pipeline.arc_planning import (
     blueprint_from_xml,
     plan_precaps,
 )
+from main import SINGLE_EVENT_PRECAP_LIMIT
 from pipeline.runner import process_chapter
 
 # SERIES_SLUGS = ["vnustigw45xt", "loydb6s7xqa5", "rv5i7wqoclxs"]
@@ -48,6 +49,8 @@ OUTPUT_ROOT = Path("output-latest-rq")
 #   python -m tests.test_hook_gen --chapters 15 22 38 45                                 # specific chapters only
 #   python -m tests.test_hook_gen --language en                                          # different language
 #   python -m tests.test_hook_gen --genre romance                                        # genre-specific peak types and hook guidance
+#   python -m tests.test_hook_gen --single-event                                         # 3 precaps (chapters 1-3), all hinting ONE high-stakes event from chapters 4-15
+#   python -m tests.test_hook_gen --single-event --genre romance                         # the same with the genre's own event types and hook guidance
 #
 # A genre run keeps its files in output-latest-rq/<slug>/<genre>/, apart from the
 # generic run, so a stored blueprint or hooks from one genre are never reused by another.
@@ -90,7 +93,7 @@ _CHAPTER_ID_RE = re.compile(r"(<(?:target_)?chapter_id>)\s*(\d+)\s*(</(?:target_
 # tags. bridge_reasoning is written as "Chapter N ends with ..." by instruction,
 # so it carries a window-local number in every row; the other two are included
 # because nothing stops the planner mentioning a chapter in them either.
-_PROSE_FIELDS = ("scene_description", "limit", "bridge_reasoning")
+_PROSE_FIELDS = ("scene_description", "limit", "bridge_reasoning", "path", "curiosity")
 _PROSE_RE = re.compile(
     r"(<(?:" + "|".join(_PROSE_FIELDS) + r")>)(.*?)(</(?:" + "|".join(_PROSE_FIELDS) + r")>)",
     re.S,
@@ -175,7 +178,7 @@ def scan_window(chapter_numbers, scan_range, chapter_count):
     return max(1, start), min(chapter_count, end)
 
 
-def read_blueprint(blueprint_file, chapters, precap_limit, tag="", force=False):
+def read_blueprint(blueprint_file, chapters, precap_limit, tag="", force=False, single_event=False):
     """Parse the stored blueprint, or (None, None) if there is nothing usable.
 
     Constraint-checked on every read rather than trusted, because the file may
@@ -191,6 +194,7 @@ def read_blueprint(blueprint_file, chapters, precap_limit, tag="", force=False):
             chapter_count=len(chapters),
             precap_limit=precap_limit,
             force=force,
+            single_event=single_event,
         )
     except BlueprintParseError as e:
         # a truncated or hand-broken file is not a reason to stop; plan again
@@ -198,7 +202,7 @@ def read_blueprint(blueprint_file, chapters, precap_limit, tag="", force=False):
         return None, None
 
 
-def ensure_blueprint(chapters, chapter_numbers, language, blueprint_file, scan, run_id=None, tag="", genre=None, force=False):
+def ensure_blueprint(chapters, chapter_numbers, language, blueprint_file, scan, run_id=None, tag="", genre=None, force=False, single_event=False):
     """Pass 1, incrementally: plan only the chapters the blueprint is missing.
 
     Reads whatever is already on disk, works out which requested chapters have
@@ -221,7 +225,7 @@ def ensure_blueprint(chapters, chapter_numbers, language, blueprint_file, scan, 
     requested = set(chapter_numbers)
     precap_limit = max(chapter_numbers)
 
-    mappings, rejected = read_blueprint(blueprint_file, chapters, precap_limit, tag, force)
+    mappings, rejected = read_blueprint(blueprint_file, chapters, precap_limit, tag, force, single_event)
     covered = {m.chapter_number for m in mappings or []} | {n for n, _ in rejected or []}
     missing = sorted(requested - covered)
 
@@ -232,7 +236,7 @@ def ensure_blueprint(chapters, chapter_numbers, language, blueprint_file, scan, 
     # Plan from the first gap, not from the scan start: the rows before it are
     # already on disk, and re-planning them would cost a call and churn rows
     # whose hooks are already written against them.
-    window_start = max(min(missing) if missing else scan_start, scan_start)
+    window_start = scan_start if single_event else max(min(missing) if missing else scan_start, scan_start)
     window_end = min(scan_end, len(chapters))
     window = chapters[window_start - 1 : window_end]
     if len(window) < 2:
@@ -248,6 +252,7 @@ def ensure_blueprint(chapters, chapter_numbers, language, blueprint_file, scan, 
         # and the tail of the window exists only to be aimed at
         precap_limit=max(chapter_numbers) - window_start + 1,
         genre=genre,
+        single_event=single_event,
     )
 
     existing_xml = (
@@ -258,7 +263,7 @@ def ensure_blueprint(chapters, chapter_numbers, language, blueprint_file, scan, 
     blueprint_file.write_text(merged, encoding="utf-8")
     print(f"{tag}Pass 1 blueprint XML stored: {blueprint_file}")
 
-    mappings, rejected = read_blueprint(blueprint_file, chapters, precap_limit, tag, force)
+    mappings, rejected = read_blueprint(blueprint_file, chapters, precap_limit, tag, force, single_event)
     return mappings or [], rejected or []
 
 
@@ -283,19 +288,21 @@ def read_existing_hooks(output_file):
     return hooks
 
 
-def series_output_dir(series_slug, genre=None):
-    """Where one series' blueprint and hooks live — a genre gets its own folder."""
+def series_output_dir(series_slug, genre=None, single_event=False):
+    """Where one series' blueprint and hooks live."""
     base = OUTPUT_ROOT / series_slug
-    return base / genre.lower() if genre else base
+    if genre:
+        base = base / genre.lower()
+    return base / "single_event" if single_event else base
 
 
-def write_markdown(series_slug, language, results, genre=None):
+def write_markdown(series_slug, language, results, genre=None, single_event=False):
     """All hooks for one series in a single .md, chapter numbers in order.
 
     Rewritten after every finished precap, not once at the end. Several series
     run concurrently and each is 10+ sequential chapters deep, so an interrupt
     partway through would otherwise lose every series at once."""
-    output_file = series_output_dir(series_slug, genre) / f"{series_slug}.md"
+    output_file = series_output_dir(series_slug, genre, single_event) / f"{series_slug}.md"
     output_file.parent.mkdir(parents=True, exist_ok=True)
     title = f"{series_slug} ({language}, {genre})" if genre else f"{series_slug} ({language})"
     lines = [f"# {title}", ""]
@@ -310,7 +317,7 @@ def write_markdown(series_slug, language, results, genre=None):
     return output_file
 
 
-def generate_sequentially(series_slug, mappings, chapters, language, existing_hooks, wanted, run_id=None, genre=None):
+def generate_sequentially(series_slug, mappings, chapters, language, existing_hooks, wanted, run_id=None, genre=None, single_event=False):
     """Pass 2: every precap in chapter order, one at a time, skipping the done.
 
     Each precap is handed every earlier one aimed at the same scene, plus the
@@ -363,6 +370,7 @@ def generate_sequentially(series_slug, mappings, chapters, language, existing_ho
                     recent_precaps=list(recent_precaps),
                     run_id=run_id,
                     genre=genre,
+                    single_event=single_event,
                 )
             except Exception as e:
                 # one failure must not stop the chain — later chapters simply
@@ -373,7 +381,7 @@ def generate_sequentially(series_slug, mappings, chapters, language, existing_ho
                 continue
 
             results.append((chapter_number, mapping.target_chapter, hook))
-            write_markdown(series_slug, language, results, genre=genre)
+            write_markdown(series_slug, language, results, genre=genre, single_event=single_event)
             print(f"\n{'-' * 50}")
             print(f"{tag}Chapter {chapter_number} -> {mapping.target_chapter}")
             print(f"{'-' * 50}\nHook: {hook}\n{'-' * 50}")
@@ -398,11 +406,15 @@ def process_series(series_slug, args, ingestor):
     print(f"SERIES: {series_slug}  (run {run_id})")
     print(f"{'=' * 60}")
 
-    if args.chapters:
+    if args.single_event:
+        if args.chapters or args.start != 1 or args.count is not None:
+            print(f"{tag}--single-event always covers chapters 1-{SINGLE_EVENT_PRECAP_LIMIT} — ignoring --start/--count/--chapters")
+        chapter_numbers = list(range(1, SINGLE_EVENT_PRECAP_LIMIT + 1))
+    elif args.chapters:
         chapter_numbers = sorted(set(args.chapters))
     else:
         start = max(1, args.start)
-        chapter_numbers = list(range(start, start + args.count))
+        chapter_numbers = list(range(start, start + (args.count or NUM_CHAPTERS)))
 
     if not chapter_numbers:
         print(f"{tag}No chapters requested — nothing to generate")
@@ -453,7 +465,7 @@ def process_series(series_slug, args, ingestor):
         f"scan range {scan[0]}-{scan[1]}"
     )
 
-    output_dir = series_output_dir(series_slug, args.genre)
+    output_dir = series_output_dir(series_slug, args.genre, args.single_event)
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / f"{series_slug}.md"
     blueprint_file = output_dir / f"{series_slug}_blueprint.xml"
@@ -467,7 +479,7 @@ def process_series(series_slug, args, ingestor):
     try:
         all_mappings, rejected = ensure_blueprint(
             chapters, valid, args.language, blueprint_file, scan, run_id, tag,
-            genre=args.genre, force=args.force,
+            genre=args.genre, force=args.force, single_event=args.single_event,
         )
     except BlueprintParseError as e:
         # the planning call is expensive; keep what came back so it can be read
@@ -514,14 +526,17 @@ def process_series(series_slug, args, ingestor):
 
     print(f"{tag}Generating {len(wanted)} precaps sequentially: {sorted(wanted)}")
     results, failed = generate_sequentially(
-        series_slug, all_mappings, chapters, args.language, existing_hooks, wanted, run_id, genre=args.genre
+        series_slug, all_mappings, chapters, args.language, existing_hooks, wanted, run_id,
+        genre=args.genre, single_event=args.single_event,
     )
 
     if failed:
         print(f"\n{tag}Failed chapters: {sorted(failed)}")
 
     results.sort(key=lambda row: row[0])
-    output_file = write_markdown(series_slug, args.language, results, genre=args.genre)
+    output_file = write_markdown(
+        series_slug, args.language, results, genre=args.genre, single_event=args.single_event
+    )
 
     print(
         f"\n{tag}Done — {len(results)} hooks on file "
@@ -554,8 +569,8 @@ def main():
     parser.add_argument(
         "--count",
         type=int,
-        default=NUM_CHAPTERS,
-        help="Number of consecutive hooks to generate from --start",
+        default=None,
+        help=f"Number of consecutive hooks to generate from --start (default {NUM_CHAPTERS})",
     )
     parser.add_argument(
         "--chapters",
@@ -582,6 +597,15 @@ def main():
             "anchor check for them, and rewrite their hooks if the .md already has them. "
             "Keeps every other chapter and its hook as they are. A target that is not "
             "ahead of its chapter, or past the last chapter fetched, is still dropped"
+        ),
+    )
+    parser.add_argument(
+        "--single-event",
+        action="store_true",
+        help=(
+            f"Precaps for chapters 1-{SINGLE_EVENT_PRECAP_LIMIT} only, all hinting ONE high-stakes event picked "
+            "from the chapters after them (planned over chapters 1-15 in one call; --start, --count and "
+            "--chapters are ignored)"
         ),
     )
     parser.add_argument(

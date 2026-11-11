@@ -28,10 +28,13 @@ def generate_hook(
     same_scene_precaps: list[str] | None = None,
     recent_precaps: list[str] | None = None,
     genre: str | None = None,
+    single_event: bool = False,
 ) -> str:
-    bridge_context = build_bridge_context(mapping, previous_limit, same_scene_precaps, recent_precaps)
+    bridge_context = build_bridge_context(
+        mapping, previous_limit, same_scene_precaps, recent_precaps, single_event
+    )
     messages = [
-        {"role": "system", "content": build_hook_prompt(language, genre)},
+        {"role": "system", "content": build_hook_prompt(language, genre, single_event)},
         {
             "role": "user",
             "content": _chapter_content(chapter_read_text, target_chapter_text, mapping, bridge_context),
@@ -50,20 +53,21 @@ def critique_hook(
     same_scene_precaps: list[str] | None = None,
     recent_precaps: list[str] | None = None,
     genre: str | None = None,
+    single_event: bool = False,
 ) -> tuple[bool, str]:
     # The predecessors go in as their own block rather than through
     # build_bridge_context: that one is written at the hook's author ("yours must
     # go past all of these"), which is the wrong voice for an editor. They are
     # sent at all only because repetition is the single failure that cannot be
     # judged from the hook and the chapters alone.
-    bridge_context = build_bridge_context(mapping)
+    bridge_context = build_bridge_context(mapping, single_event=single_event)
     predecessors = build_predecessor_block(same_scene_precaps, recent_precaps)
     content = _chapter_content(chapter_read_text, target_chapter_text, mapping, bridge_context)
     messages = [
         {
             "role": "system",
             "content": build_critique_prompt(
-                language, has_predecessors=bool(predecessors), genre=genre
+                language, has_predecessors=bool(predecessors), genre=genre, single_event=single_event
             ),
         },
         {"role": "user", "content": f"{content}{predecessors}\n\nHook to evaluate:\n{hook}"},
@@ -91,10 +95,13 @@ def rewrite_hook(
     same_scene_precaps: list[str] | None = None,
     recent_precaps: list[str] | None = None,
     genre: str | None = None,
+    single_event: bool = False,
 ) -> str:
-    bridge_context = build_bridge_context(mapping, previous_limit, same_scene_precaps, recent_precaps)
+    bridge_context = build_bridge_context(
+        mapping, previous_limit, same_scene_precaps, recent_precaps, single_event
+    )
     messages = [
-        {"role": "system", "content": build_hook_prompt(language, genre)},
+        {"role": "system", "content": build_hook_prompt(language, genre, single_event)},
         {
             "role": "user",
             "content": _chapter_content(chapter_read_text, target_chapter_text, mapping, bridge_context),

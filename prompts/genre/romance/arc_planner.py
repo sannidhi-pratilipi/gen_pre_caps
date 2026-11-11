@@ -2,7 +2,13 @@
 # placeholders in prompts/arc_prompt.py::PRECAP_BLUEPRINT_SYSTEM_PROMPT by
 # build_blueprint_prompt: peak types, dominant emotions and the ranking note.
 
-ROMANCE_EVENT_TYPES = """       ONLY A ROMANTIC MOMENT BETWEEN A LEAD AND SOMEONE THE STORY RUNS A REAL ROMANCE FOR THEM WITH CAN BE A TARGET, NO MATTER WHAT (that is the hero and heroine, and ALSO a second man or woman the story gives many chapters and real romantic moments with one of them — they are a lead for those scenes, and their scenes with that lead are targets exactly like the main pair's. What settles this is the romantic moments on the page, NOT who the story calls its hero: an author's note naming the hero, or one man being the one the heroine loves, does not rule the other out. Being powerful, often present, or married to a lead does not make one.) Both must be in it, together: DO NOT pick a kiss, touch or closeness between a lead and anyone who is not a lead, and DO NOT pick a moment one of them has alone. The moment is one of these: a kiss, a touch, a hold, coming close, a shared room or bed, one caring for the other with their hands or body, a near-kiss, a charged closeness. A target scene must contain physical closeness or touch between the two leads in it. DO NOT pick a plot event, a confrontation, a danger, a secret, a family or career event, a walkout, a conversation or a realisation as the target, however big it is. The types below are only ways a romantic moment can be shaped; a scene that has no touch or closeness between the leads in it is never picked, even if it fits one of them. If no chapter in view holds a kiss or touch, take the scene with the most physical closeness between the leads (the two in the same place, near each other, the charge of being close).
+ROMANCE_EVENT_TYPES = """       ONLY A ROMANTIC MOMENT BETWEEN A LEAD AND SOMEONE THE STORY RUNS A REAL ROMANCE FOR THEM WITH CAN BE A TARGET, NO MATTER WHAT.
+       • The leads are the hero and heroine, and ALSO a second man or woman the story gives many chapters and real romantic moments with one of them. They are a lead for those scenes, and their scenes with that lead are targets exactly like the main pair's.
+       • What settles this is the romantic moments on the page, NOT who the story calls its hero. An author's note naming the hero, or one man being the one the heroine loves, does not rule the other out. Being powerful, often present, or married to a lead does not make one a lead.
+       • Both must be in the moment, together. DO NOT pick a kiss, touch or closeness between a lead and anyone who is not a lead. DO NOT pick a moment one of them has alone.
+       • The moment is one of these: a kiss, a touch, a hold, coming close, a shared room or bed, one caring for the other with their hands or body, a near-kiss, a charged closeness. A target scene must contain physical closeness or touch between the two leads in it.
+       • DO NOT pick a plot event, a confrontation, a danger, a secret, a family or career event, a walkout, a conversation or a realisation as the target, however big it is. The types below are only ways a romantic moment can be shaped. A scene with no touch or closeness between the leads in it is never picked, even if it fits one of them.
+       • If no chapter in view holds a kiss or touch, take the scene with the most physical closeness between the leads (the two in the same place, near each other, the charge of being close).
        • COMING-TOGETHER: the leads are just about to come together — an almost-kiss, a confession on the tip of the tongue, one reaching for the other, being put into the same room or the same bed
        • GOING-APART: they are just about to go apart — a walkout, a misunderstanding about to harden, an ultimatum, a third party stepping between them, one deciding to leave
        • DANGER: danger reaching one of them with the other right there — a threat arriving between them, a secret breaking open in front of the other, one of them stepping into the harm closing on the other. A lead facing a threat alone is not the peak; the moment the other reaches them is
@@ -12,7 +18,7 @@ ROMANCE_EVENT_TYPES = """       ONLY A ROMANTIC MOMENT BETWEEN A LEAD AND SOMEON
        These names are a prompt, not a boundary, but every peak taken must be a romantic moment with physical closeness or touch between the two leads in it (see the rule at the top of this list). Anything that closes the physical distance between the leads counts, even in a chapter with no villain and no plot event at all. A moment with no touch or closeness is not a peak for this blueprint.
        BOTH LEADS ARE IN THE PEAK, IN THE SAME PLACE AT THE SAME TIME. The peak is what passes BETWEEN them — what one does to, says to, or does in front of the other. DO NOT pick a moment one lead has on their own, however much it is about the other: thinking of them, deciding about them, weeping over them, finding out about them, or acting on them somewhere they are not.
        DO NOT build a scene_description out of two moments at once, one lead in each — "she says it in the classroom while he watches a video at his flat" is two scenes, not a peak, and a precap aimed at it splits the reader between two people. If the chapter's strongest material is one lead alone, take the moment the two of them are actually in a room together instead, even when it is quieter.
-       DO NOT pick a peak that is one lead's own scene with a side character, even when it is driven entirely by feelings about the other lead — but a second lead is not a side character, and a scene between a lead and a second lead is a peak. A third party may cause the danger, the secret or the obstacle, but the peak itself must be the moment it reaches a lead with the other lead there to see it."""
+       DO NOT pick a peak that is one lead's own scene with a side character, even when it is driven entirely by feelings about the other lead. A second lead is not a side character: a scene between a lead and a second lead is a peak. A third party may cause the danger, the secret or the obstacle, but the peak itself must be the moment it reaches a lead with the other lead there to see it."""
 
 ROMANCE_EMOTION_LABELS = [
     "LOVE",
@@ -34,11 +40,11 @@ ROMANCE_EMOTION_LABELS = [
 ROMANCE_EMOTION_EXAMPLES = {
     "repeat": "LONGING, LONGING, LONGING",
     "run": "VULNERABILITY (what it will cost her), then TRUST (who is really behind it), then HEARTBREAK (what she loses when it lands)",
-    "tags": ["VULNERABILITY", "LONGING", "TRUST", "JEALOUSY", "TRUST"],
+    "tags": ["VULNERABILITY", "LONGING", "TRUST"],
 }
 
 ROMANCE_EMOTIONS = "  ".join(ROMANCE_EMOTION_LABELS) + """
-       Every one of these is a feeling about the two leads and what is between them. Choose only from this list. Do not use FEAR, REVENGE, BETRAYAL, MYSTERY, SHAME, PRIDE or any other label that is not about love, even when the scene is a danger or a secret: promise the love feeling that scene puts at risk (a danger scene is PROTECTIVENESS or HEARTBREAK, a secret is TRUST, a rival is JEALOUSY). Use LUST only for a scene of raw physical pull (a body drawn to a body, heat, wanting to touch); never for a scene of care, comfort or distress."""
+       Every one of these is a feeling about the two leads and what is between them. Choose only from this list. Do not use FEAR, REVENGE, BETRAYAL, MYSTERY, SHAME or any other label that is not about love, even when the scene is a danger or a secret: promise the love feeling that scene puts at risk (a danger scene is PROTECTIVENESS or HEARTBREAK, a secret is TRUST, a rival is JEALOUSY). Use LUST only for a scene of raw physical pull (a body drawn to a body, heat, wanting to touch); never for a scene of care, comfort or distress."""
 
 ROMANCE_RANKING_NOTE = """
        INTIMACY AND CLOSENESS RANK HIGHEST. If any chapter you were given holds an intimacy or closeness scene between the leads (a touch, a kiss, a shared bed or room, a guard coming down, a private moment between them), that scene is one of your top-ranked peaks and an anchor MUST land on it, however far out it sits.
@@ -46,8 +52,15 @@ ROMANCE_RANKING_NOTE = """
        DO NOT skip an intimacy scene because the chapters before it hold strong events. No matter how good the events in between are, the intimacy scene wins.
        When an intimacy scene and another strong peak both sit among the chapters you were given, anchor on the intimacy scene.
        When several intimacy scenes are available, rank all of them above every non-intimacy peak.
-       NO OTHER EVENT THAN A ROMANTIC MOMENT BETWEEN A LEAD AND SOMEONE THE STORY ROMANCES THEM WITH (A KISS, A TOUCH, A COMING CLOSE, PHYSICAL CLOSENESS) CAN EVER BE THE TARGET, AND A SECOND LEAD'S SCENES COUNT. WHEREVER ONE IS ENCOUNTERED, CHOOSE IT AS THE TARGET. Reading forward from chapter N, the first chapter that holds such a moment is the target for N. DO NOT pass over it for a bigger or more intense scene further on: the reader reaches it first, and a precap that skips it breaks its promise. A later, more intense scene still gets its own run, once the reader has reached this one (sticky anchor). This overrides rule 5's "a later chapter holds a BIGGER peak" reasoning.
-       PICK THE NEAREST CHAPTER POSSIBLE. Before reaching further out, check every chapter after N for a intimate close moment between the leads. The nearest chapter that holds this is the target. DO NOT reach past a nearer romantic moment, and DO NOT leave a long run on one scene while a nearer chapter holds a intimate moment."""
+       ONLY A ROMANTIC MOMENT BETWEEN A LEAD AND SOMEONE THE STORY ROMANCES THEM WITH (A KISS, A TOUCH, A COMING CLOSE, PHYSICAL CLOSENESS) CAN EVER BE THE TARGET, AND A SECOND LEAD'S SCENES COUNT. WHEREVER ONE IS ENCOUNTERED, CHOOSE IT AS THE TARGET. Reading forward from chapter N, the first chapter that holds such a moment is the target for N. DO NOT pass over it for a bigger or more intense scene further on: the reader reaches it first, and a precap that skips it breaks its promise. A later, more intense scene still gets its own run, once the reader has reached this one (sticky anchor). This overrides rule 5's "a later chapter holds a BIGGER peak" reasoning.
+       PICK THE NEAREST CHAPTER POSSIBLE. Before reaching further out, check every chapter after N for an intimate close moment between the leads. The nearest chapter that holds this is the target. DO NOT reach past a nearer romantic moment, and DO NOT leave a long run on one scene while a nearer chapter holds an intimate moment."""
+
+ROMANCE_RANKING_NOTE_SINGLE_EVENT = """
+       INTIMACY AND CLOSENESS RANK HIGHEST. If any chapter after {precap_limit} holds an intimacy or closeness scene between the leads (a touch, a kiss, a shared bed or room, a guard coming down, a private moment between them), the marquee event is one of those scenes.
+       DO NOT rank any plot event above an intimacy scene because the plot event is bigger, louder or more dramatic.
+       ONLY A ROMANTIC MOMENT BETWEEN A LEAD AND SOMEONE THE STORY ROMANCES THEM WITH (A KISS, A TOUCH, A COMING CLOSE, PHYSICAL CLOSENESS) CAN BE THE MARQUEE EVENT, AND A SECOND LEAD'S SCENES COUNT.
+       When several such scenes are available, take the one with the highest stakes for the leads anywhere in chapters after {precap_limit}, and DO NOT prefer one for being near.
+       Among them, the strongest is the one that most overturns where chapters 1 to {precap_limit} leave the leads, so that a reader asks how it came to this. Examples: leads set up as enemies who are now together, now married or bound by a marriage, or in an intimate moment they swore would never happen."""
 
 # ────────────────────
 # ROMANCE OPENING RUN
@@ -72,7 +85,11 @@ ROMANCE_OPENING_RUN_NOTE = """
 # ROMANCE_INTIMACY_RUN_NOTE below, which rule 8b's exception points at.
 
 ROMANCE_BEAT_LADDER_ACT_CLAUSE = """For every peak except a romantic moment between the leads, only the beats BEFORE the act are yours to spend; the act and everything after it stay with the chapter, the last rung included.
-       A ROMANTIC MOMENT BETWEEN THE LEADS IS BROKEN FINER, NEVER SPENT: the closeness itself splits into beats, and each rung spends exactly ONE of them and stops there. EVERY rung shows its own beat already happening, the FIRST rung included — she is already against him; then a hand at her waist and neither of them steady; then his face coming down to hers — never an approach to it, never the room around it, never a mood. Everything past that one beat stays back, the kiss, the words and what they change between the leads included. The restraint is the same as for every other peak; only the line moves, from before the act to one step inside it. DO NOT let a rung take two steps, DO NOT reach the late beats early, and DO NOT leave a rung with no closeness on it at all. Even the rungs farthest from the target keep a hint of the scene's most intense closeness in their PERMIT; only its specifics are held back, never its existence."""
+       A ROMANTIC MOMENT BETWEEN THE LEADS IS BROKEN FINER, NEVER SPENT. The closeness itself splits into beats, and each rung spends exactly ONE of them and stops there.
+       • EVERY rung shows its own beat already happening, the FIRST rung included: she is already against him; then a hand at her waist and neither of them steady; then his face coming down to hers. DO NOT show an approach to it, the room around it, or a mood.
+       • Everything past that one beat stays back, the kiss, the words and what they change between the leads included. The restraint is the same as for every other peak; only the line moves, from before the act to one step inside it.
+       • DO NOT let a rung take two steps, DO NOT reach the late beats early, and DO NOT leave a rung with no closeness on it at all.
+       • Even the rungs farthest from the target keep a hint of the scene's most intense closeness in their PERMIT. Only its specifics are held back, never its existence."""
 
 
 # ────────────────────
@@ -82,17 +99,30 @@ ROMANCE_BEAT_LADDER_ACT_CLAUSE = """For every peak except a romantic moment betw
 # after rule 8b. Narrow exception to rules 8/8b: only for an INTIMACY &
 # CLOSENESS peak built of a sequence of beats, never any other peak type.
 
-ROMANCE_INTIMACY_RUN_NOTE = """
+_INTIMACY_RUN_HEAD = """
        ROMANCE INTIMACY RUNS (exception to 8/8b, the outcome rule and the final-limit checks): when the peak is a romantic moment between the leads — them touching, holding, reaching for, caring for or coming together, whatever peak type you labelled it — split it into its own small beats in the order they happen and give the run ONE beat per rung, in that order. The beats run from the CONTACT to the last word, roughly: she is already against him; his hands have not caught up with her; a hand at her waist and neither of them steady; his face coming down to hers; something said low that changes what they are to each other; the kiss; the confession. The approach is not a beat and never gets a rung: crossing a room, reaching, almost touching are the chapter's run-up, and a rung spent on one is a rung that showed nothing.
        COUNT THE RUNGS, THEN CUT THAT MANY BEATS, and cut them from the CONTACT onward. THE FIRST RUNG ALREADY SHOWS THE LEADS TOUCHING: a run of eight gets eight beats and its first one is the contact itself, never a look across a room. DO NOT hold the touch back for a later rung, and DO NOT let one rung carry the hold AND the kiss AND the words: a rung is ONE beat.
        Each rung's PERMIT names its own beat as already happening, plainly. The next rung moves exactly one beat further. DO NOT repeat a beat an earlier rung named, DO NOT skip ahead past the next beat, and DO NOT compress the beats to fit the run: the more rungs, the finer the beats.
        Each rung's PROHIBIT holds only the beats that come after its own, and what they change between the leads. DO NOT put a beat that an earlier rung already named in any PROHIBIT, and NEVER put the contact itself in one at any rung: "any physical touch", "any embrace", "what she does with her arms", "whether they touch" are the one thing this run exists to show, so a PROHIBIT holding them back has emptied every rung it governs.
        A beat whose weight is what it will change (a whispered line, a decision) is named by its weight, never its content: that something was said that changes both their lives, not what. DO NOT put the words themselves into any PERMIT, at any rung.
        THE INTENSE CLOSE MOMENT IS NEVER FULLY PROHIBITED, AT ANY RUNG, HOWEVER FAR AHEAD THE TARGET IS: when the target chapter is many chapters out, the early rungs must still keep the intense closeness of the scene alive for the reader. Every rung's PERMIT carries at least a HINT that the leads are heading toward that intense moment (the pull between them, the line they are near, the want they cannot hide), and no PROHIBIT may rule out the existence of that closeness or the lead's pull toward it. A PROHIBIT holds back only the specifics: how far it goes, the words, and what it changes between them. A hint is not a naming: an early rung does not have to say outright what the intense moment is, but it must never be written so that the reader is told nothing of it is coming.
-       If the scene is a single beat, anchor it as a one-chapter run and name that beat plainly in the PERMIT.
-       VARIETY ACROSS A RUN: whenever a run stretches across more than one chapter, go through chapter K for EVERY romantic moment between the leads in it. DO NOT stretch one moment across the whole run while chapter K holds others. Give the rungs different moments from chapter K, in the order they happen there, and write each rung's own moment in its scene_description. This overrides rule 8's identical scene_description and the final check that a run carries the same scene_description word for word. A moment may take several consecutive rungs, one beat each, only when the run has more rungs than chapter K has moments. Every rung still shows touch and still holds back its moment's outcome.
-       EVERY romantic moment between the leads gets this, whatever peak type you labelled it, and its run shows closeness and touch on every single rung, including the rungs that are still building toward the moment. Only a peak whose act is NOT a moment between them — danger landing, a walkout, a contract, a truth breaking open — still holds the act back per 8/8b.
 """
+
+_INTIMACY_RUN_SINGLE_BEAT = """       If the scene is a single beat, anchor it as a one-chapter run and name that beat plainly in the PERMIT.
+"""
+
+_INTIMACY_RUN_VARIETY = """       VARIETY ACROSS A RUN: whenever a run stretches across more than one chapter, go through chapter K for EVERY romantic moment between the leads in it. DO NOT stretch one moment across the whole run while chapter K holds others. Give the rungs different moments from chapter K, in the order they happen there, and write each rung's own moment in its scene_description. This overrides rule 8's identical scene_description and the final check that a run carries the same scene_description word for word. A moment may take several consecutive rungs, one beat each, only when the run has more rungs than chapter K has moments. Every rung still shows touch and still holds back its moment's outcome.
+"""
+
+_INTIMACY_RUN_TAIL = """       EVERY romantic moment between the leads gets this, whatever peak type you labelled it, and its run shows closeness and touch on every single rung, including the rungs that are still building toward the moment. Only a peak whose act is NOT a moment between them — danger landing, a walkout, a contract, a truth breaking open — still holds the act back per 8/8b.
+"""
+
+ROMANCE_INTIMACY_RUN_NOTE = (
+    _INTIMACY_RUN_HEAD + _INTIMACY_RUN_SINGLE_BEAT + _INTIMACY_RUN_VARIETY + _INTIMACY_RUN_TAIL
+)
+
+ROMANCE_INTIMACY_RUN_NOTE_SINGLE_EVENT = _INTIMACY_RUN_HEAD + _INTIMACY_RUN_TAIL
+
 
 # ────────────────────
 # ROMANCE UNKNOWN LEAD
@@ -102,5 +132,20 @@ ROMANCE_INTIMACY_RUN_NOTE = """
 # never a side character.
 
 ROMANCE_UNKNOWN_LEAD_NOTE = """
-       ROMANCE EXCEPTION: the ban above is for side characters only. If the person missing from chapter N is the OTHER LEAD, do not drop the scene — write scene_description and bridge_reasoning with that lead's real name as usual, the same way across the whole run. Do not mark this in scene_description itself: it must stay identical for every chapter in the run, and whether this lead is known yet is a per-chapter fact the hook writer checks directly against chapter N's own text, not something planned here. Side characters stay fully out, as above.
+       ROMANCE EXCEPTION: the ban above is for side characters only. If the person missing from chapter N is the OTHER LEAD, do not drop the scene. Write scene_description and bridge_reasoning with that lead's real name as usual, the same way across the whole run. DO NOT mark this in scene_description: it must stay identical for every chapter in the run. Whether this lead is known yet is a per-chapter fact the hook writer checks against chapter N's own text, not something planned here. Side characters stay fully out, as above.
 """
+
+
+ROMANCE_ARC = {
+    "event_types_block": ROMANCE_EVENT_TYPES,
+    "emotion_labels": ROMANCE_EMOTION_LABELS,
+    "emotions_block": ROMANCE_EMOTIONS,
+    "emotion_examples": ROMANCE_EMOTION_EXAMPLES,
+    "ranking_note_block": ROMANCE_RANKING_NOTE,
+    "ranking_note_block_single_event": ROMANCE_RANKING_NOTE_SINGLE_EVENT,
+    "opening_run_note": ROMANCE_OPENING_RUN_NOTE,
+    "unknown_lead_note": ROMANCE_UNKNOWN_LEAD_NOTE,
+    "intimacy_run_note": ROMANCE_INTIMACY_RUN_NOTE,
+    "intimacy_run_note_single_event": ROMANCE_INTIMACY_RUN_NOTE_SINGLE_EVENT,
+    "beat_ladder_act_clause": ROMANCE_BEAT_LADDER_ACT_CLAUSE,
+}

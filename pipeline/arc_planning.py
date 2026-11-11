@@ -48,6 +48,8 @@ class ChapterMapping:
     bridge_reasoning: str
     limit: str = ""
     dominant_emotion: str = ""
+    path: str = ""
+    curiosity: str = ""
 
     @property
     def distance(self) -> int:
@@ -167,6 +169,8 @@ def _parse_blueprint(response: str) -> list[ChapterMapping]:
                 # stale tag name: the precap is written with no ceiling at all.
                 limit=get("limit") or get("reveal"),
                 dominant_emotion=emotion if emotion in EMOTIONS else "",
+                path=get("path"),
+                curiosity=get("curiosity"),
             )
         )
 
@@ -189,6 +193,7 @@ def enforce_constraints(
     precap_limit: int | None = None,
     force: bool = False,
     multi_scene: bool = False,
+    single_event: bool = False,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
     """The anchor and monotonicity rules are instructions in the Pass 1
     prompt, so the model can violate them. Re-check every mapping here rather
@@ -235,6 +240,12 @@ def enforce_constraints(
     instead of snapping it back to the run's first one — a run may then tease
     several moments of the same target chapter (see MULTI_SCENE_RUN_GENRES).
 
+    SINGLE_EVENT: `single_event=True` is the marquee mode (see
+    prompts/arc_prompt.py::MARQUEE_*): every chapter must point at the SAME target,
+    the first one a row names, and that target must be past `precap_limit` — an
+    event inside the chapters that get precaps is no event to promise. A row that
+    names any other target is rejected, and the one-chapter grace never applies.
+
     Returns the surviving mappings plus (chapter_number, reason) for each
     rejection, so the caller can report what was dropped instead of silently
     shipping fewer precaps than expected."""
@@ -263,6 +274,7 @@ def enforce_constraints(
     floor = 0
     drifted: list[tuple[int, str, str]] = []
     forced: list[tuple[int, str]] = []
+    event_chapter: int | None = None
 
     # Walk chapters rather than mappings: a chapter with no surviving mapping
     # still has to advance the run, or the anchor would outlive its payoff.
@@ -287,6 +299,19 @@ def enforce_constraints(
                 (n, f"target {k} is past the last chapter fetched ({chapter_count})")
             )
             continue
+
+        if single_event:
+            if k <= precap_limit:
+                rejected.append(
+                    (n, f"target {k} is inside the chapters that get precaps (1..{precap_limit})")
+                )
+                continue
+            if event_chapter is not None and k != event_chapter:
+                rejected.append(
+                    (n, f"target {k} is not the marquee event's chapter ({event_chapter})")
+                )
+                continue
+            event_chapter = k
 
         # Staircase: a real defect in the plan, but one whose rows are still
         # generable, so --force keeps them.
@@ -355,6 +380,7 @@ def blueprint_from_xml(
     precap_limit: int | None = None,
     force: bool = False,
     genre: str | None = None,
+    single_event: bool = False,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
     """Turn a blueprint XML into mappings, without calling the planner.
 
@@ -371,7 +397,8 @@ def blueprint_from_xml(
         chapter_count,
         precap_limit,
         force=force,
-        multi_scene=multi_scene_runs(genre),
+        multi_scene=multi_scene_runs(genre) and not single_event,
+        single_event=single_event,
     )
     _report_blueprint(kept)
     return kept, rejected
@@ -383,6 +410,7 @@ def plan_precaps(
     precap_limit: int | None = None,
     run_id: str | None = None,
     genre: str | None = None,
+    single_event: bool = False,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]], str]:
     """Pass 1: one LLM call over the full chapter text (no summarization step —
     the planner reads the chapters themselves) that maps every chapter N to a
@@ -393,8 +421,11 @@ def plan_precaps(
     the series — neither of which a per-chapter call could do.
 
     `genre` swaps out the peak-event vocabulary in the prompt (see
-    prompts/arc_prompt.py::GENRE_EVENT_TYPES) — it does not change any of the
+    prompts/genre/<genre>/arc_planner.py) — it does not change any of the
     structural rules (anchors, limits), only what counts as a peak.
+
+    `single_event` is the marquee mode: one event is picked from the chapters
+    after `precap_limit` and every precap hints at it, one new beat each.
 
     Returns the kept mappings, the rejections, and the planner's raw response
     so the caller can persist the blueprint XML alongside the hooks."""
@@ -406,14 +437,16 @@ def plan_precaps(
     messages = [
         {
             "role": "system",
-            "content": build_blueprint_prompt(precap_limit, chapter_count, genre),
+            "content": build_blueprint_prompt(precap_limit, chapter_count, genre, single_event),
         },
         {"role": "user", "content": _format_chapters_block(chapters)},
     ]
     response = complete(
         messages, metadata=_call_metadata("precap_blueprint", language, run_id)
     )
-    kept, rejected = blueprint_from_xml(response, chapter_count, precap_limit, genre=genre)
+    kept, rejected = blueprint_from_xml(
+        response, chapter_count, precap_limit, genre=genre, single_event=single_event
+    )
     return kept, rejected, response
 
 

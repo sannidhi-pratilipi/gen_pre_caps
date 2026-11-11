@@ -21,6 +21,8 @@ from pipeline.runner import process_chapter
 PRECAP_LIMIT = 10
 CHAPTER_LIMIT = 15
 
+SINGLE_EVENT_PRECAP_LIMIT = 3
+
 # Pass 2 is sequential because each precap is shown the ones written before it:
 # every earlier precap aimed at the same target scene, plus the last few the
 # listener heard whatever scene they were about.
@@ -63,12 +65,22 @@ def parse_args(argv=None):
         help="genre, e.g. romance — swaps the peak-event vocabulary and hook-writing guidance for that genre (default: the generic rules)",
     )
     parser.add_argument(
-        "--precap-limit", type=int, default=PRECAP_LIMIT,
-        help=f"generate precaps for chapters 1..N (default {PRECAP_LIMIT})",
+        "--precap-limit", type=int, default=None,
+        help=(
+            f"generate precaps for chapters 1..N (default {PRECAP_LIMIT}, "
+            f"or {SINGLE_EVENT_PRECAP_LIMIT} with --single-event)"
+        ),
     )
     parser.add_argument(
         "--chapter-limit", type=int, default=CHAPTER_LIMIT,
         help=f"fetch N chapters; must exceed --precap-limit so late precaps have a target (default {CHAPTER_LIMIT})",
+    )
+    parser.add_argument(
+        "--single-event", action="store_true",
+        help=(
+            "pick ONE high-hook event from the chapters after --precap-limit and have every "
+            "precap hint at it, one new beat each (output files get a _single_event suffix)"
+        ),
     )
     parser.add_argument(
         "-o", "--output-dir", default="output-latest-rq",
@@ -82,7 +94,10 @@ def main(argv=None):
     series_slug = args.series
     language = args.language
     genre = args.genre
-    precap_limit = args.precap_limit
+    single_event = args.single_event
+    precap_limit = args.precap_limit or (
+        SINGLE_EVENT_PRECAP_LIMIT if single_event else PRECAP_LIMIT
+    )
     chapter_limit = args.chapter_limit
     ingestor = ChapterIngestor()
 
@@ -100,7 +115,8 @@ def main(argv=None):
     # the run; when a previous run already produced a usable blueprint there is
     # nothing to gain from asking for it again. Delete the .xml to force a
     # fresh plan.
-    blueprint_file = output_dir / f"{series_slug}_blueprint.xml"
+    suffix = "_single_event" if single_event else ""
+    blueprint_file = output_dir / f"{series_slug}_blueprint{suffix}.xml"
     mappings = rejected = blueprint_xml = None
 
     existing_xml = (
@@ -113,6 +129,7 @@ def main(argv=None):
                 chapter_count=len(chapters),
                 precap_limit=precap_limit,
                 genre=genre,
+                single_event=single_event,
             )
             if mappings:
                 blueprint_xml = existing_xml
@@ -130,11 +147,11 @@ def main(argv=None):
         try:
             mappings, rejected, blueprint_xml = plan_precaps(
                 chapters, language=language, precap_limit=precap_limit,
-                genre=genre,
+                genre=genre, single_event=single_event,
             )
         except BlueprintParseError as e:
             # the planning call is expensive; keep what came back so it can be read
-            failed_file = output_dir / f"{series_slug}_blueprint_failed.xml"
+            failed_file = output_dir / f"{series_slug}_blueprint_failed{suffix}.xml"
             failed_file.write_text(e.response, encoding="utf-8")
             print(f"Pass 1 failed — {e}\nRaw planner response written to: {failed_file}")
             return
@@ -160,7 +177,7 @@ def main(argv=None):
     # earlier one aimed at the same scene, plus the one immediately before it —
     # so it can be written to repeat neither their content nor their shape.
     # That dependency is why this cannot be parallelised.
-    output_file = output_dir / f"{series_slug}.md"
+    output_file = output_dir / f"{series_slug}{suffix}.md"
     print(f"Generating {len(mappings)} precaps sequentially into {output_file}")
 
     results = []
@@ -197,6 +214,7 @@ def main(argv=None):
                 same_scene_precaps=list(run_precaps),
                 recent_precaps=list(recent_precaps),
                 genre=genre,
+                single_event=single_event,
             )
         except Exception as e:
             # one failure must not stop the chain — the next chapter simply
