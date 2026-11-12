@@ -5,7 +5,7 @@
 ROMANCE_EVENT_TYPES = """       ONLY A ROMANTIC MOMENT BETWEEN A LEAD AND SOMEONE THE STORY RUNS A REAL ROMANCE FOR THEM WITH CAN BE A TARGET, NO MATTER WHAT.
        • The leads are the hero and heroine, and ALSO a second man or woman the story gives many chapters and real romantic moments with one of them. They are a lead for those scenes, and their scenes with that lead are targets exactly like the main pair's.
        • What settles this is the romantic moments on the page, NOT who the story calls its hero. An author's note naming the hero, or one man being the one the heroine loves, does not rule the other out. Being powerful, often present, or married to a lead does not make one a lead.
-       • Both must be in the moment, together. DO NOT pick a kiss, touch or closeness between a lead and anyone who is not a lead. DO NOT pick a moment one of them has alone.
+       • Both must be in the moment, together. DO NOT pick a kiss, touch or closeness between a lead and anyone who is not a lead. DO NOT pick a moment one of them has alone. The moment is between two people. If three people act on each other at once (two men and one woman, a rival stepping in), DO NOT pick it. Separate pair moments are allowed only when each is its own scene, never one scene split across PERMITs.
        • The moment is one of these: a kiss, a touch, a hold, coming close, a shared room or bed, one caring for the other with their hands or body, a near-kiss, a charged closeness. A target scene must contain physical closeness or touch between the two leads in it.
        • DO NOT pick a plot event, a confrontation, a danger, a secret, a family or career event, a walkout, a conversation or a realisation as the target, however big it is. The types below are only ways a romantic moment can be shaped. A scene with no touch or closeness between the leads in it is never picked, even if it fits one of them.
        • If no chapter in view holds a kiss or touch, take the scene with the most physical closeness between the leads (the two in the same place, near each other, the charge of being close).
@@ -50,8 +50,10 @@ ROMANCE_RANKING_NOTE = """
        INTIMACY AND CLOSENESS RANK HIGHEST. If any chapter after {precap_limit} holds an intimacy or closeness scene between the leads (a touch, a kiss, a shared bed or room, a guard coming down, a private moment between them), the marquee event is one of those scenes.
        DO NOT rank any plot event above an intimacy scene because the plot event is bigger, louder or more dramatic.
        ONLY A ROMANTIC MOMENT BETWEEN A LEAD AND SOMEONE THE STORY ROMANCES THEM WITH (A KISS, A TOUCH, A COMING CLOSE, PHYSICAL CLOSENESS) CAN BE THE MARQUEE EVENT, AND A SECOND LEAD'S SCENES COUNT.
+       A FIRST outranks any escalation: the leads' first kiss or first intimate moment beats any later or more intimate scene, however far along the story it sits.
        When several such scenes are available, take the one with the highest stakes for the leads anywhere in chapters after {precap_limit}, and DO NOT prefer one for being near.
-       Among them, the strongest is the one that most overturns where chapters 1 to {precap_limit} leave the leads, so that a reader asks how it came to this. Examples: leads set up as enemies who are now together, now married or bound by a marriage, or in an intimate moment they swore would never happen."""
+       Among them, the strongest is the one that most overturns where chapters 1 to {precap_limit} leave the leads, so that a reader asks how it came to this. Examples: leads set up as enemies who are now together, now married or bound by a marriage, or in an intimate moment they swore would never happen.
+       Prefer an event that sets a lead's hope in chapters 1 to {precap_limit} against a coming moment the reader can see coming and the lead cannot, so each precap can play the one against the other."""
 
 # ────────────────────
 # ROMANCE INTIMACY EVENT

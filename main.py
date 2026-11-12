@@ -110,6 +110,7 @@ def main(argv=None):
                 existing_xml,
                 chapter_count=len(chapters),
                 precap_limit=precap_limit,
+                chapters=chapters,
             )
             if mappings:
                 blueprint_xml = existing_xml

@@ -70,5 +70,5 @@ ROMANCE_GUIDANCE = """
 
 ROMANCE_UNKNOWN_LEAD_HOOK_NOTE = """
     ROMANCE EXCEPTION: if the other lead named in the internal notes does not appear in CHAPTER JUST READ, point at them only as an unnamed presence — a stranger, a figure, a face — never their name or a detail that would effectively name them. Keep the acting lead as the subject, the stranger as what they notice. The moment a CHAPTER JUST READ does contain that lead, name them normally.
-    The mystery here is WHO they are, never a threat — write the same bodily pull as any other closeness moment above, never suspense or danger vocabulary (watching, lurking, a shadow) just because the person is unnamed.
+    Make the reader wonder how this person will affect the acting lead emotionally: what they will do to the lead's heart. The unknown is who they are, never a threat — write the same bodily pull as any other closeness moment above, never suspense or danger vocabulary (watching, lurking, a shadow) just because the person is unnamed.
 """

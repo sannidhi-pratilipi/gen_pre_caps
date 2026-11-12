@@ -165,10 +165,35 @@ def _parse_blueprint(response: str) -> list[ChapterMapping]:
     return parsed
 
 
+_INDIC = "\u0900-\u0d7f"  # Devanagari through Malayalam: names are copied in the story's own script
+_NOT_A_NAME = {
+    "The", "A", "An", "In", "On", "At", "He", "She", "They", "His", "Her", "Their", "It",
+    "Then", "When", "While", "After", "Before", "As", "And", "But", "With", "Into", "From",
+}
+
+
+def _scene_names(scene: str) -> list[str]:
+    """The proper nouns in a scene_description. The planner writes everything in
+    English except names, which it copies in the chapters' own script, so those
+    script tokens are the names. For an English story, fall back to capitalised
+    words that are not common sentence openers."""
+    tokens = [re.sub(r"['’]s$", "", t) for t in re.split(rf"[^\w{_INDIC}]+", scene) if t]
+    script = [t for t in tokens if re.search(f"[{_INDIC}]", t)]
+    if script:
+        return list(dict.fromkeys(script))
+    return list(dict.fromkeys(t for t in tokens if t[:1].isupper() and t not in _NOT_A_NAME))
+
+
+def _appears(name: str, text: str) -> bool:
+    boundary = rf"(?<![\w{_INDIC}]){re.escape(name)}(?![\w{_INDIC}])"
+    return re.search(boundary, text, flags=re.IGNORECASE if name.isascii() else 0) is not None
+
+
 def enforce_constraints(
     mappings: list[ChapterMapping],
     chapter_count: int,
     precap_limit: int | None = None,
+    chapters: list[str] | None = None,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
     """The rules in the Pass 1 prompt can be violated by the model, so re-check
     every mapping here rather than trusting the response.
@@ -181,6 +206,11 @@ def enforce_constraints(
     scene in the target it named. A row whose scene_description differs from the
     first row's is repaired, since the whole run shares one target chapter and
     one scene.
+
+    With `chapters` given, the event must also be about someone the reader has met:
+    at least one name in its scene_description has to appear in chapters 1..precap_limit.
+    If none does, the chapters after them are probably a different story (an
+    anthology), and every row is rejected rather than teased.
 
     Returns the surviving mappings plus (chapter_number, reason) for each
     rejection, so the caller can report what was dropped instead of silently
@@ -205,6 +235,7 @@ def enforce_constraints(
     event_chapter: int | None = None
     event_scene = ""
     drifted: list[tuple[int, str, str]] = []
+    precap_text = "\n".join((chapters or [])[:precap_limit])
 
     for n in range(1, precap_limit + 1):
         mapping = by_chapter.get(n)
@@ -230,6 +261,14 @@ def enforce_constraints(
             continue
 
         if event_chapter is None:
+            names = _scene_names(mapping.scene_description) if chapters else []
+            if names and not any(_appears(name, precap_text) for name in names):
+                reason = (
+                    f"none of the event's characters ({', '.join(names)}) appear in chapters "
+                    f"1..{precap_limit} — chapter {k} looks like a different story"
+                )
+                rejected.extend((m, reason) for m in sorted(by_chapter) if m >= n)
+                break
             event_chapter = k
             event_scene = mapping.scene_description
         elif mapping.scene_description != event_scene:
@@ -262,6 +301,7 @@ def blueprint_from_xml(
     response: str,
     chapter_count: int,
     precap_limit: int | None = None,
+    chapters: list[str] | None = None,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
     """Turn a blueprint XML into mappings, without calling the planner.
 
@@ -273,7 +313,9 @@ def blueprint_from_xml(
     Raises BlueprintParseError if the XML holds no usable mappings, so a
     truncated or half-written file falls back to a real planning call instead of
     silently producing no precaps."""
-    kept, rejected = enforce_constraints(_parse_blueprint(response), chapter_count, precap_limit)
+    kept, rejected = enforce_constraints(
+        _parse_blueprint(response), chapter_count, precap_limit, chapters
+    )
     _report_blueprint(kept)
     return kept, rejected
 
@@ -310,7 +352,7 @@ def plan_precaps(
     response = complete(
         messages, metadata=_call_metadata("precap_blueprint", language, run_id)
     )
-    kept, rejected = blueprint_from_xml(response, chapter_count, precap_limit)
+    kept, rejected = blueprint_from_xml(response, chapter_count, precap_limit, chapters)
     return kept, rejected, response
 
 

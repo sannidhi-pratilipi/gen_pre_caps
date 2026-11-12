@@ -24,12 +24,13 @@ RECENT_PRECAP_WINDOW = 3  # how many just-written precaps each new one is shown
 OUTPUT_ROOT = Path("output-latest-rq")
 
 # Usage examples (run from project root):
-#   python -m tests.test_hook_gen                                                        # defaults: SERIES_SLUGS, 3 precaps (chapters 1-3) hinting ONE event from chapters 4-15
+#   python -m tests.test_hook_gen                                                        # defaults: SERIES_SLUGS, 3 precaps (chapters 1-3) hinting ONE event from chapters 1-15
 #   python -m tests.test_hook_gen --series wxljcrzqxhlj                                  # single series
 #   python -m tests.test_hook_gen --series wxljcrzqxhlj 6cpqfrtqn8dk orqd3inphyvb        # multiple series
 #   python -m tests.test_hook_gen --language en                                          # different language
 #   python -m tests.test_hook_gen --genre romance                                        # genre-specific peak types and hook guidance
 #   python -m tests.test_hook_gen --fresh                                                # throw away the stored blueprint and hooks first
+#   python -m tests.test_hook_gen --series wxljcrzqxhlj --chapters 2                     # rewrite only chapter 2's precap from the stored blueprint
 #
 # A genre run keeps its files in output-latest-rq/<slug>/<genre>/, apart from the generic
 # run, so a stored blueprint or hooks from one genre are never reused by another. A run is
@@ -47,7 +48,9 @@ def read_blueprint(blueprint_file, chapters, tag=""):
     if not xml.strip():
         return None, None
     try:
-        return blueprint_from_xml(xml, chapter_count=len(chapters), precap_limit=PRECAP_LIMIT)
+        return blueprint_from_xml(
+            xml, chapter_count=len(chapters), precap_limit=PRECAP_LIMIT, chapters=chapters
+        )
     except BlueprintParseError as e:
         # a truncated or hand-broken file is not a reason to stop; plan again
         print(f"{tag}Stored blueprint unusable ({e}) — planning again")
@@ -123,7 +126,7 @@ def write_markdown(series_slug, language, results, genre=None):
     return output_file
 
 
-def generate_sequentially(series_slug, mappings, chapters, language, existing_hooks, wanted, run_id=None, genre=None):
+def generate_sequentially(series_slug, mappings, chapters, language, existing_hooks, wanted, run_id=None, genre=None, redo=frozenset()):
     """Pass 2: every precap in chapter order, one at a time, skipping the done.
 
     Each precap is handed every earlier one written for the event, so it can
@@ -154,7 +157,7 @@ def generate_sequentially(series_slug, mappings, chapters, language, existing_ho
         if not continues:
             event_precaps = []
 
-        if chapter_number in existing_hooks:
+        if chapter_number in existing_hooks and chapter_number not in redo:
             hook = existing_hooks[chapter_number][1]
         else:
             try:
@@ -178,6 +181,7 @@ def generate_sequentially(series_slug, mappings, chapters, language, existing_ho
                 previous_mapping = None
                 continue
 
+            results = [r for r in results if r[0] != chapter_number]
             results.append((chapter_number, mapping.target_chapter, hook))
             write_markdown(series_slug, language, results, genre=genre)
             print(f"\n{'-' * 50}")
@@ -221,9 +225,15 @@ def process_series(series_slug, args, ingestor):
                 print(f"{tag}--fresh: removed {path.name}")
 
     try:
-        mappings, rejected = ensure_blueprint(
-            chapters, args.language, blueprint_file, run_id, tag, genre=args.genre
-        )
+        if args.chapters:
+            mappings, rejected = read_blueprint(blueprint_file, chapters, tag)
+            if not mappings:
+                print(f"{tag}--chapters needs a stored blueprint ({blueprint_file}) and found none — run without it first")
+                return []
+        else:
+            mappings, rejected = ensure_blueprint(
+                chapters, args.language, blueprint_file, run_id, tag, genre=args.genre
+            )
     except BlueprintParseError as e:
         # the planning call is expensive; keep what came back so it can be read
         failed_file = output_dir / f"{series_slug}_blueprint_failed.xml"
@@ -236,9 +246,17 @@ def process_series(series_slug, args, ingestor):
 
     existing_hooks = read_existing_hooks(output_file)
     planned = {m.chapter_number for m in mappings}
-    wanted = planned - set(existing_hooks)
-    if existing_hooks:
-        print(f"{tag}Chapters {sorted(set(existing_hooks) & planned)} already have hooks — keeping them")
+    redo = set(args.chapters or ())
+    if redo - planned:
+        print(f"{tag}Chapters {sorted(redo - planned)} have no mapping in the blueprint — skipping them")
+        redo &= planned
+    wanted = (planned - set(existing_hooks)) | redo
+    if args.chapters and not redo:
+        print(f"{tag}Nothing left to generate")
+        return [(n, target, hook) for n, (target, hook) in existing_hooks.items()]
+    kept = (set(existing_hooks) & planned) - redo
+    if kept:
+        print(f"{tag}Chapters {sorted(kept)} already have hooks — keeping them")
 
     if not wanted:
         print(f"{tag}Nothing left to generate")
@@ -247,7 +265,7 @@ def process_series(series_slug, args, ingestor):
     print(f"{tag}Generating {len(wanted)} precaps sequentially: {sorted(wanted)}")
     results, failed = generate_sequentially(
         series_slug, mappings, chapters, args.language, existing_hooks, wanted, run_id,
-        genre=args.genre,
+        genre=args.genre, redo=redo,
     )
 
     if failed:
@@ -278,7 +296,15 @@ def main():
         action="store_true",
         help="Delete the stored blueprint and hooks first, and redo the series from scratch",
     )
+    parser.add_argument(
+        "--chapters",
+        type=int,
+        nargs="+",
+        help="Rewrite only these chapters' precaps (e.g. 2 or 1 3) from the stored blueprint, without planning again; the other chapters' hooks stay and still feed the context",
+    )
     args = parser.parse_args()
+    if args.chapters and args.fresh:
+        parser.error("--chapters keeps the stored blueprint and the other hooks, so it cannot be used with --fresh")
 
     ingestor = ChapterIngestor()
 
