@@ -1,4 +1,5 @@
 import argparse
+import re
 from collections import deque
 from itertools import islice
 from pathlib import Path
@@ -18,6 +19,7 @@ from pipeline.runner import process_chapter
 # PRECAP_LIMIT by enough that the event has chapters to be picked from.
 PRECAP_LIMIT = 3
 CHAPTER_LIMIT = 15
+NEAR_CHAPTER_LIMIT = 10  # --flow near: the planner sees only the first 10 chapters
 
 # Pass 2 is sequential because each precap is shown the ones written before it:
 # every earlier precap aimed at the same target scene, plus the last few the
@@ -28,8 +30,22 @@ CHAPTER_LIMIT = 15
 # is several precaps wide rather than one.
 RECENT_PRECAP_WINDOW = 3
 
+# A first chapter far shorter than the ones after it is an author's note, a promo
+# or a pitch-style prologue rather than a scene. It has nothing a precap can
+# bridge from, so it is skipped and the precaps go to the next PRECAP_LIMIT
+# chapters instead. Only chapter 1 is checked.
+NON_STORY_LENGTH_RATIO = 0.25
 
-def write_markdown(output_file, series_slug, language, results):
+
+def is_non_story_opener(chapters):
+    following = sorted(len(text) for text in chapters[1:6])
+    if len(chapters) < 3 or not following:
+        return False
+    median = following[len(following) // 2]
+    return len(chapters[0]) < NON_STORY_LENGTH_RATIO * median
+
+
+def write_markdown(output_file, series_slug, language, results, offset=0):
     """Rewrite the whole .md from the results so far.
 
     Called after every finished precap rather than once at the end: a
@@ -39,9 +55,9 @@ def write_markdown(output_file, series_slug, language, results):
     chapters in order for the cost of a few kilobytes."""
     lines = [f"# {series_slug} ({language})", ""]
     for chapter_number, target_chapter, _scene, hook in sorted(results, key=lambda r: r[0]):
-        lines.append(f"## Chapter {chapter_number}")
+        lines.append(f"## Chapter {chapter_number + offset}")
         lines.append("")
-        lines.append(f"- **Target chapter:** {target_chapter}")
+        lines.append(f"- **Target chapter:** {target_chapter + offset}")
         lines.append("")
         lines.append(hook)
         lines.append("")
@@ -58,19 +74,26 @@ def parse_args(argv=None):
     parser.add_argument("-l", "--language", default="ml", help="language code, e.g. hi or ml")
     parser.add_argument(
         "-g", "--genre", default=None,
-        help="genre, e.g. romance — swaps the peak-event vocabulary and hook-writing guidance for that genre (default: the generic rules)",
+        help="genre, e.g. romance — forces that genre's hook-writing guidance. Without it, the romance voice is used only when the planner picks a romantic event",
     )
     parser.add_argument(
         "--precap-limit", type=int, default=PRECAP_LIMIT,
         help=f"generate precaps for chapters 1..N (default {PRECAP_LIMIT})",
     )
     parser.add_argument(
-        "--chapter-limit", type=int, default=CHAPTER_LIMIT,
-        help=f"fetch N chapters; must exceed --precap-limit so late precaps have a target (default {CHAPTER_LIMIT})",
+        "--chapter-limit", type=int, default=None,
+        help=f"fetch N chapters; must exceed --precap-limit so late precaps have a target "
+        f"(default {CHAPTER_LIMIT}, or {NEAR_CHAPTER_LIMIT} with --flow near)",
+    )
+    parser.add_argument(
+        "--flow", choices=("event", "near"), default="event",
+        help="event: every precap points at one big event after --precap-limit; "
+        "near: each chapter may point at its own event, as near as the next chapter",
     )
     parser.add_argument(
         "-o", "--output-dir", default="output-latest-rq",
-        help="directory the per-series output folder is created under",
+        help="directory the per-series output folder is created under "
+        "(--flow near writes into <series>/near-payoff/ inside it)",
     )
     return parser.parse_args(argv)
 
@@ -81,15 +104,30 @@ def main(argv=None):
     language = args.language
     genre = args.genre
     precap_limit = args.precap_limit
-    chapter_limit = args.chapter_limit
+    near = args.flow == "near"
+    chapter_limit = args.chapter_limit or (NEAR_CHAPTER_LIMIT if near else CHAPTER_LIMIT)
     ingestor = ChapterIngestor()
 
-    chapters = list(islice(ingestor.iter_series_chapters(series_slug, language=language), chapter_limit))
+    chapter_iter = ingestor.iter_series_chapters(series_slug, language=language)
+    chapters = list(islice(chapter_iter, chapter_limit))
+
+    # Everything below runs on the chapters after a skipped opener, numbered from 1
+    # as the planner sees them; `offset` turns those numbers back into the
+    # series' own wherever they are shown. One more chapter is fetched so the
+    # event still has as many chapters to be picked from.
+    offset = 0
+    if is_non_story_opener(chapters):
+        offset = 1
+        print(f"Chapter 1 looks like a non-story opener ({len(chapters[0])} chars) — skipping it")
+        chapters = chapters[1:] + list(islice(chapter_iter, 1))
+
     if len(chapters) < 2:
         print("Not enough chapters to generate precaps")
         return
 
     output_dir = Path(args.output_dir) / series_slug
+    if near:
+        output_dir = output_dir / "near-payoff"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # ── Pass 1: one planning call over the full chapter text — unless a
@@ -101,9 +139,16 @@ def main(argv=None):
     blueprint_file = output_dir / f"{series_slug}_blueprint.xml"
     mappings = rejected = blueprint_xml = None
 
+    # The blueprint's chapter numbers are the planner's, so a skipped opener is
+    # recorded in the file; one planned under a different skip is not reused.
+    offset_header = f"<!-- chapter offset: {offset} -->\n" if offset else ""
     existing_xml = (
         blueprint_file.read_text(encoding="utf-8") if blueprint_file.exists() else ""
     )
+    stored = re.match(r"<!-- chapter offset: (\d+) -->", existing_xml)
+    if existing_xml.strip() and (int(stored.group(1)) if stored else 0) != offset:
+        print("Stored blueprint was planned with a different chapter 1 skip — planning again")
+        existing_xml = ""
     if existing_xml.strip():
         try:
             mappings, rejected = blueprint_from_xml(
@@ -111,6 +156,7 @@ def main(argv=None):
                 chapter_count=len(chapters),
                 precap_limit=precap_limit,
                 chapters=chapters,
+                near=near,
             )
             if mappings:
                 blueprint_xml = existing_xml
@@ -127,7 +173,7 @@ def main(argv=None):
     if blueprint_xml is None:
         try:
             mappings, rejected, blueprint_xml = plan_precaps(
-                chapters, language=language, precap_limit=precap_limit, genre=genre,
+                chapters, language=language, precap_limit=precap_limit, genre=genre, near=near,
             )
         except BlueprintParseError as e:
             # the planning call is expensive; keep what came back so it can be read
@@ -138,7 +184,7 @@ def main(argv=None):
 
         # Persist the planner's raw response straight away, so the blueprint
         # survives even if Pass 2 blows up.
-        blueprint_file.write_text(blueprint_xml, encoding="utf-8")
+        blueprint_file.write_text(offset_header + blueprint_xml, encoding="utf-8")
         print(f"Pass 1 blueprint XML stored: {blueprint_file}")
 
     # The blueprint itself is not printed — it is already on disk as the raw
@@ -147,7 +193,7 @@ def main(argv=None):
     if rejected:
         print("\nDropped by constraint check (no precap generated for these):")
         for chapter_number, reason in rejected:
-            print(f"  chapter {chapter_number}: {reason}")
+            print(f"  chapter {chapter_number + offset}: {reason}")
 
     if not mappings:
         print("\nNo valid mappings — nothing to generate.")
@@ -179,7 +225,7 @@ def main(argv=None):
             run_precaps = []          # a new scene starts with nothing said about it
         try:
             hook = process_chapter(
-                book_id=f"{series_slug}_chapter_{mapping.chapter_number}",
+                book_id=f"{series_slug}_chapter_{mapping.chapter_number + offset}",
                 chapter_read_text=chapters[mapping.chapter_number - 1],
                 target_chapter_text=chapters[mapping.target_chapter - 1],
                 mapping=mapping,
@@ -192,16 +238,16 @@ def main(argv=None):
         except Exception as e:
             # one failure must not stop the chain — the next chapter simply
             # compares against the last precaps that did succeed
-            print(f"Chapter {mapping.chapter_number}: precap generation failed — {e}")
-            failed.append(mapping.chapter_number)
+            print(f"Chapter {mapping.chapter_number + offset}: precap generation failed — {e}")
+            failed.append(mapping.chapter_number + offset)
             previous_mapping = None
             continue
 
         results.append(
             (mapping.chapter_number, mapping.target_chapter, mapping.scene_description, hook)
         )
-        write_markdown(output_file, series_slug, language, results)
-        print(f"  chapter {mapping.chapter_number} written ({len(results)}/{len(mappings)})")
+        write_markdown(output_file, series_slug, language, results, offset)
+        print(f"  chapter {mapping.chapter_number + offset} written ({len(results)}/{len(mappings)})")
         run_precaps.append(hook)
         recent_precaps.append(hook)
         previous_mapping = mapping

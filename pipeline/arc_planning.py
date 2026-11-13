@@ -4,9 +4,11 @@ from dataclasses import dataclass, replace
 
 from llm.tfy_client import complete
 from prompts.arc_prompt import ALL_EMOTION_LABELS, build_blueprint_prompt
+from prompts.near_arc_prompt import build_near_blueprint_prompt
 
 # Every precap chapter points at the same event chapter K. K must be above the last
 # precap chapter and a chapter whose text was actually fetched (K <= chapter_count).
+# In the near flow, each run of consecutive chapters has its own K, any later chapter.
 
 # The feeling a precap is built to land. Planned per chapter rather than left to
 # generation, because "don't repeat the last one's emotion" is a constraint
@@ -32,6 +34,8 @@ class ChapterMapping:
     dominant_emotion: str = ""
     path: str = ""
     curiosity: str = ""
+    # The planner marks a romantic event between the leads; Pass 2 then writes in the romance voice.
+    romance: bool = False
 
     @property
     def distance(self) -> int:
@@ -149,6 +153,7 @@ def _parse_blueprint(response: str) -> list[ChapterMapping]:
                 dominant_emotion=emotion if emotion in EMOTIONS else "",
                 path=get("path"),
                 curiosity=get("curiosity"),
+                romance=get("romance").lower().startswith("y"),
             )
         )
 
@@ -194,6 +199,7 @@ def enforce_constraints(
     chapter_count: int,
     precap_limit: int | None = None,
     chapters: list[str] | None = None,
+    near: bool = False,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
     """The rules in the Pass 1 prompt can be violated by the model, so re-check
     every mapping here rather than trusting the response.
@@ -211,6 +217,10 @@ def enforce_constraints(
     at least one name in its scene_description has to appear in chapters 1..precap_limit.
     If none does, the chapters after them are probably a different story (an
     anthology), and every row is rejected rather than teased.
+
+    With `near`, each run of consecutive chapters sharing a target is its own
+    event, the target may be any later fetched chapter (even inside 1..precap_limit),
+    and scene and romance are held per run instead of across the whole blueprint.
 
     Returns the surviving mappings plus (chapter_number, reason) for each
     rejection, so the caller can report what was dropped instead of silently
@@ -234,6 +244,7 @@ def enforce_constraints(
 
     event_chapter: int | None = None
     event_scene = ""
+    event_romance = False
     drifted: list[tuple[int, str, str]] = []
     precap_text = "\n".join((chapters or [])[:precap_limit])
 
@@ -251,14 +262,23 @@ def enforce_constraints(
                 (n, f"target {k} is past the last chapter fetched ({chapter_count})")
             )
             continue
-        if k <= precap_limit:
+        if not near and k <= precap_limit:
             rejected.append(
                 (n, f"target {k} is inside the chapters that get precaps (1..{precap_limit})")
             )
             continue
         if event_chapter is not None and k != event_chapter:
-            rejected.append((n, f"target {k} is not the event's chapter ({event_chapter})"))
-            continue
+            if not near:
+                rejected.append((n, f"target {k} is not the event's chapter ({event_chapter})"))
+                continue
+            if n < event_chapter - 1:
+                print(
+                    f"[blueprint] chapter {n}: moves to chapter {k} before the reader "
+                    f"reaches chapter {event_chapter}, which an earlier precap promised"
+                )
+            event_chapter = None              # a new run, with its own event
+        if near and kept and kept[-1].chapter_number + 1 != n:
+            event_chapter = None              # a gap ends the run
 
         if event_chapter is None:
             names = _scene_names(mapping.scene_description) if chapters else []
@@ -271,9 +291,11 @@ def enforce_constraints(
                 break
             event_chapter = k
             event_scene = mapping.scene_description
+            event_romance = mapping.romance
         elif mapping.scene_description != event_scene:
             drifted.append((n, event_scene, mapping.scene_description))
             mapping = replace(mapping, scene_description=event_scene)
+        mapping = replace(mapping, romance=event_romance)
         kept.append(mapping)
 
     repeated = [
@@ -302,6 +324,7 @@ def blueprint_from_xml(
     chapter_count: int,
     precap_limit: int | None = None,
     chapters: list[str] | None = None,
+    near: bool = False,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]]]:
     """Turn a blueprint XML into mappings, without calling the planner.
 
@@ -314,7 +337,7 @@ def blueprint_from_xml(
     truncated or half-written file falls back to a real planning call instead of
     silently producing no precaps."""
     kept, rejected = enforce_constraints(
-        _parse_blueprint(response), chapter_count, precap_limit, chapters
+        _parse_blueprint(response), chapter_count, precap_limit, chapters, near
     )
     _report_blueprint(kept)
     return kept, rejected
@@ -326,14 +349,18 @@ def plan_precaps(
     precap_limit: int | None = None,
     run_id: str | None = None,
     genre: str | None = None,
+    near: bool = False,
 ) -> tuple[list[ChapterMapping], list[tuple[int, str]], str]:
     """Pass 1: one LLM call over the full chapter text (no summarization step —
     the planner reads the chapters themselves) that picks one event from the
     chapters after `precap_limit` and maps every precap chapter to it, one new
     beat each.
 
-    `genre` swaps out the peak-event vocabulary in the prompt (see
-    prompts/genre/<genre>/arc_planner.py).
+    `genre` no longer changes the planning prompt: one prompt serves every
+    genre and flags a romantic event on each mapping instead.
+
+    `near` switches to the near flow: each chapter may point at its own event,
+    as near as the next chapter (see enforce_constraints).
 
     Returns the kept mappings, the rejections, and the planner's raw response
     so the caller can persist the blueprint XML alongside the hooks."""
@@ -345,18 +372,24 @@ def plan_precaps(
     messages = [
         {
             "role": "system",
-            "content": build_blueprint_prompt(precap_limit, chapter_count, genre),
+            "content": (
+                build_near_blueprint_prompt(precap_limit, chapter_count) if near
+                else build_blueprint_prompt(precap_limit, chapter_count, genre)
+            ),
         },
         {"role": "user", "content": _format_chapters_block(chapters)},
     ]
     response = complete(
         messages, metadata=_call_metadata("precap_blueprint", language, run_id)
     )
-    kept, rejected = blueprint_from_xml(response, chapter_count, precap_limit, chapters)
+    kept, rejected = blueprint_from_xml(response, chapter_count, precap_limit, chapters, near)
     return kept, rejected, response
 
 
 def _report_blueprint(kept: list[ChapterMapping]) -> None:
     """How far ahead the event sits. Advisory — nothing here rejects a mapping."""
-    if kept:
-        print(f"[blueprint] event in chapter {kept[0].target_chapter}, {len(kept)} precaps")
+    for m in kept:
+        print(
+            f"[blueprint] chapter {m.chapter_number} -> event in chapter {m.target_chapter}"
+            + (", romance" if m.romance else "")
+        )

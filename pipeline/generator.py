@@ -18,6 +18,11 @@ def _chapter_content(
     )
 
 
+def _genre(mapping: ChapterMapping, genre: str | None) -> str | None:
+    """Romance voice whenever the planner picked a romantic event; otherwise the caller's genre."""
+    return "romance" if mapping.romance else genre
+
+
 def generate_hook(
     chapter_read_text: str,
     target_chapter_text: str,
@@ -33,7 +38,7 @@ def generate_hook(
         mapping, previous_limit, same_scene_precaps, recent_precaps
     )
     messages = [
-        {"role": "system", "content": build_hook_prompt(language, genre)},
+        {"role": "system", "content": build_hook_prompt(language, _genre(mapping, genre))},
         {
             "role": "user",
             "content": _chapter_content(chapter_read_text, target_chapter_text, mapping, bridge_context),
@@ -65,7 +70,7 @@ def critique_hook(
         {
             "role": "system",
             "content": build_critique_prompt(
-                language, has_predecessors=bool(predecessors), genre=genre
+                language, has_predecessors=bool(predecessors), genre=_genre(mapping, genre)
             ),
         },
         {"role": "user", "content": f"{content}{predecessors}\n\nHook to evaluate:\n{hook}"},
@@ -98,7 +103,7 @@ def rewrite_hook(
         mapping, previous_limit, same_scene_precaps, recent_precaps
     )
     messages = [
-        {"role": "system", "content": build_hook_prompt(language, genre)},
+        {"role": "system", "content": build_hook_prompt(language, _genre(mapping, genre))},
         {
             "role": "user",
             "content": _chapter_content(chapter_read_text, target_chapter_text, mapping, bridge_context),

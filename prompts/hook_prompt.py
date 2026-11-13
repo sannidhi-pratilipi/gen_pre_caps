@@ -24,7 +24,7 @@ HOOK_SYSTEM_PROMPT = """
 
     Labelled notes follow, prepared for this precap alone. Read every note you are given; an absent note does not apply. Three bind hardest:
     • TARGET SCENE — the single scene the hook is built on. Do not substitute another moment, however exciting.
-    • WHAT THIS PRECAP MUST HOLD BACK — what stays back, then the most of the scene you may name. It governs how much you name, never whether you keep something back. If it seems to permit the whole moment, keep one piece back anyway.
+    • WHAT THIS PRECAP MUST HOLD BACK — what stays back, then the most of the scene you may name. Show everything its PERMIT names, and nothing its PROHIBIT holds back.
     • DOMINANT EMOTION — the one feeling this precap must land.
 
     ORDER OF AUTHORITY when instructions disagree: WHAT THIS PRECAP MUST HOLD BACK, then the GENRE section, then the LANGUAGE section, then everything else. NEVER GIVE AWAY WHAT HAPPENS stands outside this order.
@@ -160,7 +160,7 @@ HOOK_SYSTEM_PROMPT = """
     • DO NOT reuse the form, opening move, pivot words, closing construction or a vivid word (images, charged nouns and verbs) from the precaps you are shown, or echo what they already gave away: go one layer past them. Names and ordinary words do not count. What must differ above all is the BEAT; a build a genre section fixes is not a repetition.
     • DO NOT explain the twist in the line before the close: an explained gap is not a gap.
     • DO NOT write neutral, procedural description where an emotional word exists, and DO NOT write about feelings alone: anchor every feeling to a specific action.
-    • DO NOT include a detail because the chapter contains it. Carry only what the one coming moment cannot be seen without: as a rule one other person at most, one thing from CHAPTER JUST READ, and the one thing the moment turns on. Cut the mundane cause behind the gesture, the bystanders and the props it does not need; cutting the cause also leaves the closing line something real to ask.
+    • DO NOT include a detail that adds no value. DO NOT include a detail because the chapter contains it. Carry only what the one coming moment cannot be seen without: as a rule one other person at most, one thing from CHAPTER JUST READ, and the one thing the moment turns on. Cut the mundane cause behind the gesture, the bystanders and the props it does not need; cutting the cause also leaves the closing line something real to ask.
     • DO NOT summarize either chapter. The target scene arrives as one seeable moment, never a compressed description of what happens in it.
     • DO NOT write clipped or fragmented sentences. DO NOT stack clauses before the main point or wind a sentence into sub-clauses to sound literary: say it plainly, in as few clauses as the beat needs. Creative means a fresh angle or image, never an evasive sentence. This is about HOW you say it, never what you hold back.
     • DO NOT make grammar or spelling mistakes in the target language.
@@ -180,10 +180,11 @@ HOOK_SYSTEM_PROMPT = """
     THE CLOSING LINE
     ────────────────────
 
-    Build the close from THE QUESTION THE READER IS LEFT WITH note. Ask it from the acting lead's feeling, naming the lead's vow and the act, in your own words. DO NOT copy its wording and DO NOT answer it.
+    Build the close from THE QUESTION THE READER IS LEFT WITH note, in your own words. DO NOT copy its wording and DO NOT answer it.
+    • A CLOSING QUESTION ASKS HOW THE EVENT WILL AFFECT THE ACTING LEAD'S LIFE: what it will cost them, what it will change for them or do to their heart, whether the vow or fear from CHAPTER JUST READ survives it. DO NOT ask how or why the event came about ("how did she end up here?", "how did he reach this moment?", "why did she do it?").
     • A closing question earns its place only if it could not be pasted onto a different chapter. Swap the names out and check whether it would still fit anywhere in the series.
     • DO NOT use closed-loop formulas ("will the truth come out?", "will he find out who she is?", "will she survive?"): they answer themselves.
-    • Ask from the side of whoever the anchor belongs to: what it will cost THEM, which one they choose, what is left between them, or, when a gesture has been shown whole, why that person did it when everything the reader knows says they would not.
+    • Ask from the side of whoever the anchor belongs to: what it will cost THEM, which one they choose, what is left between them.
     • DO NOT close on a question about another character's feelings, motive, intention or fate.
     • Close on a statement when the coming moment is final enough that a question would soften it, or when the precap before this one closed on a question. Even then, leave the consequence open.
 
@@ -230,7 +231,18 @@ EVENT_HOOK_NOTE = """
     EVENT SERIES
     ────────────────────
 
-    This precap is one of a few, each shown at the end of a different early chapter, all for the SAME later event. WHAT THIS PRECAP MUST HOLD BACK says which beat of it is yours: hint that beat and no other, and write it with drama.
+    This precap is one of a few, each shown at the end of a different early chapter, all for the SAME later event. WHAT THIS PRECAP MUST HOLD BACK says which beat of it is yours: show that beat and no other, and write it with drama.
+    • THE FIRST PRECAP OF THE SERIES (no earlier precap for this event is listed) shows only the first beat, but gives a clear hint that something big is about to happen to the lead: what is at stake, the line about to be crossed. DO NOT state what the big thing is or how it lands.
+    • FOLLOW THE NOTES. They are the content of this precap, planned across the whole series for this chapter. Use EVERY note you are given:
+      – THE ANCHOR: the fact the precap opens on
+      – THE PATH TO THE EVENT: the steps that carry the flow from the anchor to the event
+      – TARGET SCENE: the one event the precap is about
+      – WHAT THIS PRECAP MUST HOLD BACK: the beat shows everything the PERMIT names and nothing the PROHIBIT holds back
+      – THE QUESTION THE READER IS LEFT WITH: the flow states the LEAD-IN, and the close asks the QUESTION's own gap, in your own words
+      – DOMINANT EMOTION: the feeling the wording carries
+      – ROMANTIC EVENT: when given, write the beat in the romance voice
+      The notes use real names. Anyone CHAPTER JUST READ has not introduced still stays an unnamed stranger in the hook, even when a note names them.
+      DO NOT swap in a different fact, beat or question from the chapters. DO NOT drop something a note gives you. Go to the chapters only for the wording, the details of what a note names, and anything a note leaves out.
     • WRITE ONE SMOOTH FLOW FROM CHAPTER JUST READ INTO THE EVENT.
       First work out how what happened in CHAPTER JUST READ leads to the event. THE ANCHOR note gives you the thread: what the lead is holding, and what in the event meets it, breaks it or answers it.
       Write it as one continuous line, each sentence starting from where the one before it ended.
@@ -255,14 +267,14 @@ EVENT_HOOK_NOTE = """
       Make the reader wonder how this person will affect the acting lead emotionally. Set the stranger against what the acting lead feels or has sworn, and keep the acting lead's feeling, not the stranger, as what the question is about.
       The event's own nouns (the stranger, the thing the act turns on) are the same in every precap of the series and may repeat. What must differ is the beat, the opening and the close.
     • USE THE PATH AND THE LEAD-IN. THE PATH TO THE EVENT note tells you what happens in the chapters the reader has not read. The LEAD-IN in THE QUESTION THE READER IS LEFT WITH note is the piece the planner marked for stating.
-      State whichever steps of it make the flow clear and make the reader want to reach the event.
+      State the LEAD-IN outright, and whichever steps of the path make the flow clear and make the reader want to reach the event.
       This is the exception to SPOILER DISTANCE: the path may be stated.
     • LET THE READER KNOW MORE THAN THE LEAD. Where the lead does not yet know what is coming (who they are about to meet, what is being arranged around them), show it from the reader's side so the reader sees them walking toward it unaware. That gap is what pulls the reader on.
     • SET THE LEAD'S OWN VOW OR FEAR FROM CHAPTER JUST READ AGAINST THE ACT, in the same breath, so the reader feels the clash.
-    • CLOSE ON A SPECIFIC QUESTION OR THE LEAD'S OWN VOW. Do one of three: ask how or why this lead, given what they swore or refused in CHAPTER JUST READ, comes to be in the act (THE QUESTION THE READER IS LEFT WITH note gives it), naming both the vow and the act; or ask whether they hold the vow or give way, as two named alternatives; or end on a flat statement of what rides on it.
+    • CLOSE ON A SPECIFIC QUESTION OR THE LEAD'S OWN VOW. Do one of three: ask how the event will affect this lead's life, set against what they swore or refused in CHAPTER JUST READ (THE QUESTION THE READER IS LEFT WITH note gives it); or ask whether they hold the vow or give way, as two named alternatives; or end on a flat statement of what rides on it for them.
       DO NOT answer the question.
       DO NOT close on a question about bodily position or mechanics (how someone ended up where they are). Ask about the closeness and what it is doing to the lead.
-      DO NOT close on a "how did she get there" that names neither the vow nor the act, or on a bare "what turn is this" or "what is this the start of".
+      DO NOT close on a question about how or why the event came about ("how did she get there", "why did he do it"), or on a bare "what turn is this" or "what is this the start of".
     • DO NOT say that the event happens and DO NOT say that it does not.
     """
 
@@ -345,15 +357,15 @@ def build_bridge_context(
         if mapping.limit:
             parts.append(
                 "\n\nWHAT THIS PRECAP MUST HOLD BACK (internal — the authority on what this one "
-                "may name: it states what stays back, then what you may name. The permission is a "
-                f"ceiling, never a quota. {RUN_POSITION_NOTE}):\n{mapping.limit}"
+                "may name. Show everything the PERMIT names, and nothing the PROHIBIT holds back. "
+                f"{RUN_POSITION_NOTE}):\n{mapping.limit}"
             )
 
         if mapping.curiosity:
             parts.append(
                 "\n\nTHE QUESTION THE READER IS LEFT WITH (internal — build the close around the "
-                "QUESTION: DO NOT answer it and DO NOT copy its wording into the hook. The LEAD-IN "
-                "is a piece of the path you may state outright, even though the reader has not "
+                "QUESTION, not a different one: DO NOT answer it and DO NOT copy its wording into the "
+                "hook. State the LEAD-IN outright in the flow, even though the reader has not "
                 f"read it):\n{mapping.curiosity}"
             )
 
@@ -361,6 +373,12 @@ def build_bridge_context(
             parts.append(
                 "\n\nDOMINANT EMOTION (internal — the one feeling this precap must leave the "
                 f"reader holding, not yours to swap for an easier one):\n{mapping.dominant_emotion}"
+            )
+
+        if mapping.romance:
+            parts.append(
+                "\n\nROMANTIC EVENT (internal — the event is a romantic moment between the two "
+                "leads: write the beat and the close in the romance voice of the GENRE section)"
             )
 
     if previous_limit:

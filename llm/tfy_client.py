@@ -11,7 +11,7 @@ from openai import BadRequestError, OpenAI, RateLimitError
 load_dotenv()
 
 # MODEL = "openai/gpt-5.4-nano"
-MODEL = "google-vertex/google-gemini-3.8-flash"
+MODEL = "google-vertex/google-gemini-3.6-flash"
 FALLBACK_MODEL = "openai/gpt-5-mini"
 
 # Hook writing (first draft and rewrites) runs on its own model; blueprint planning
@@ -20,7 +20,7 @@ HOOK_MODEL = "google-vertex/google-gemini-3.6-flash"
 
 # Critique passes judge hooks written by MODEL above, so they run on a
 # different model than the one being judged.
-CRITIQUE_MODEL = "openai/gpt-5.6-luna"
+CRITIQUE_MODEL = "google-vertex/google-gemini-3.6-flash"
 
 _BASE_METADATA = {
     "env": os.environ.get("ENV", "local"),

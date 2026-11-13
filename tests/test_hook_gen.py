@@ -8,7 +8,7 @@ from itertools import islice
 from pathlib import Path
 
 from ingestion.ingest_chapter import ChapterIngestor
-from main import CHAPTER_LIMIT, PRECAP_LIMIT
+from main import CHAPTER_LIMIT, NEAR_CHAPTER_LIMIT, PRECAP_LIMIT, is_non_story_opener
 from pipeline.arc_planning import (
     BlueprintParseError,
     blueprint_from_xml,
@@ -19,7 +19,7 @@ from pipeline.runner import process_chapter
 # SERIES_SLUGS = ["vnustigw45xt", "loydb6s7xqa5", "rv5i7wqoclxs"]
 SERIES_SLUGS=["nxiarydspru9", "rzmjlonhei4x", "5mtf05kjz1l8", "mukeivhakxuw", "w2iz3pb0tait", "ngixsk2ufcva", "ulknumcucepz"]
 LANGUAGE = "ml"
-GENRE = None  # e.g. "romance"; None runs the generic rules. --genre overrides this
+GENRE = None  # e.g. "romance" forces the romance hook voice; None lets the planner's <romance> flag decide. --genre overrides this
 RECENT_PRECAP_WINDOW = 3  # how many just-written precaps each new one is shown
 OUTPUT_ROOT = Path("output-latest-rq")
 
@@ -28,16 +28,17 @@ OUTPUT_ROOT = Path("output-latest-rq")
 #   python -m tests.test_hook_gen --series wxljcrzqxhlj                                  # single series
 #   python -m tests.test_hook_gen --series wxljcrzqxhlj 6cpqfrtqn8dk orqd3inphyvb        # multiple series
 #   python -m tests.test_hook_gen --language en                                          # different language
-#   python -m tests.test_hook_gen --genre romance                                        # genre-specific peak types and hook guidance
+#   python -m tests.test_hook_gen --genre romance                                        # force romance hook guidance on every precap
 #   python -m tests.test_hook_gen --fresh                                                # throw away the stored blueprint and hooks first
 #   python -m tests.test_hook_gen --series wxljcrzqxhlj --chapters 2                     # rewrite only chapter 2's precap from the stored blueprint
+#   python -m tests.test_hook_gen --flow near                                            # near payoff: each chapter's own near event, files in output-latest-rq/<slug>/near-payoff/
 #
 # A genre run keeps its files in output-latest-rq/<slug>/<genre>/, apart from the generic
 # run, so a stored blueprint or hooks from one genre are never reused by another. A run is
 # incremental: a stored blueprint is reused, and chapters that already have a hook keep it.
 
 
-def read_blueprint(blueprint_file, chapters, tag=""):
+def read_blueprint(blueprint_file, chapters, tag="", near=False, offset=0):
     """Parse the stored blueprint, or (None, None) if there is nothing usable.
 
     Constraint-checked on every read rather than trusted, because the file may
@@ -47,9 +48,14 @@ def read_blueprint(blueprint_file, chapters, tag=""):
     xml = blueprint_file.read_text(encoding="utf-8")
     if not xml.strip():
         return None, None
+    # A blueprint planned under a different chapter 1 skip numbers its chapters differently.
+    stored = re.match(r"<!-- chapter offset: (\d+) -->", xml)
+    if (int(stored.group(1)) if stored else 0) != offset:
+        print(f"{tag}Stored blueprint was planned with a different chapter 1 skip — planning again")
+        return None, None
     try:
         return blueprint_from_xml(
-            xml, chapter_count=len(chapters), precap_limit=PRECAP_LIMIT, chapters=chapters
+            xml, chapter_count=len(chapters), precap_limit=PRECAP_LIMIT, chapters=chapters, near=near,
         )
     except BlueprintParseError as e:
         # a truncated or hand-broken file is not a reason to stop; plan again
@@ -57,29 +63,30 @@ def read_blueprint(blueprint_file, chapters, tag=""):
         return None, None
 
 
-def ensure_blueprint(chapters, language, blueprint_file, run_id=None, tag="", genre=None):
+def ensure_blueprint(chapters, language, blueprint_file, run_id=None, tag="", genre=None, near=False, offset=0):
     """Pass 1: reuse the stored blueprint when it covers every precap chapter,
     otherwise plan again. Nothing missing means no planning call at all, which is
     the point — Pass 1 reads every chapter in one prompt and is the most
     expensive single step."""
-    mappings, rejected = read_blueprint(blueprint_file, chapters, tag)
+    mappings, rejected = read_blueprint(blueprint_file, chapters, tag, near, offset)
     if mappings and len(mappings) == PRECAP_LIMIT:
         print(f"{tag}Pass 1 skipped — reusing {blueprint_file.name}")
         return mappings, rejected
 
     print(f"{tag}Pass 1 planning chapters 1-{len(chapters)}")
     _, _, xml = plan_precaps(
-        chapters, language=language, run_id=run_id, precap_limit=PRECAP_LIMIT, genre=genre
+        chapters, language=language, run_id=run_id, precap_limit=PRECAP_LIMIT, genre=genre, near=near,
     )
     # Persist straight away, so the blueprint survives even if Pass 2 blows up.
-    blueprint_file.write_text(xml, encoding="utf-8")
+    offset_header = f"<!-- chapter offset: {offset} -->\n" if offset else ""
+    blueprint_file.write_text(offset_header + xml, encoding="utf-8")
     print(f"{tag}Pass 1 blueprint XML stored: {blueprint_file}")
 
-    mappings, rejected = read_blueprint(blueprint_file, chapters, tag)
+    mappings, rejected = read_blueprint(blueprint_file, chapters, tag, near, offset)
     return mappings or [], rejected or []
 
 
-def read_existing_hooks(output_file):
+def read_existing_hooks(output_file, offset=0):
     """{chapter_number: (target_chapter, hook)} already written to the .md.
 
     Read back out of the markdown rather than from a sidecar, so the file a run
@@ -96,29 +103,31 @@ def read_existing_hooks(output_file):
         found = re.search(r"^- \*\*Target chapter:\*\* (\d+)\s*$", body, flags=re.M)
         hook = re.sub(r"^- \*\*Target chapter:\*\* \d+\s*$", "", body, flags=re.M).strip()
         if hook:
-            hooks[int(blocks[i])] = (int(found.group(1)) if found else 0, hook)
+            hooks[int(blocks[i]) - offset] = ((int(found.group(1)) - offset) if found else 0, hook)
     return hooks
 
 
-def series_output_dir(series_slug, genre=None):
+def series_output_dir(series_slug, genre=None, near=False):
     """Where one series' blueprint and hooks live."""
     base = OUTPUT_ROOT / series_slug
+    if near:
+        base = base / "near-payoff"
     return base / genre.lower() if genre else base
 
 
-def write_markdown(series_slug, language, results, genre=None):
+def write_markdown(series_slug, language, results, genre=None, near=False, offset=0):
     """All hooks for one series in a single .md, chapter numbers in order.
 
     Rewritten after every finished precap, not once at the end, so an interrupt
     partway through does not lose every series at once."""
-    output_file = series_output_dir(series_slug, genre) / f"{series_slug}.md"
+    output_file = series_output_dir(series_slug, genre, near) / f"{series_slug}.md"
     output_file.parent.mkdir(parents=True, exist_ok=True)
     title = f"{series_slug} ({language}, {genre})" if genre else f"{series_slug} ({language})"
     lines = [f"# {title}", ""]
     for chapter_number, target_chapter, hook in sorted(results, key=lambda r: r[0]):
-        lines.append(f"## Chapter {chapter_number}")
+        lines.append(f"## Chapter {chapter_number + offset}")
         lines.append("")
-        lines.append(f"- **Target chapter:** {target_chapter}")
+        lines.append(f"- **Target chapter:** {target_chapter + offset}")
         lines.append("")
         lines.append(hook)
         lines.append("")
@@ -126,7 +135,7 @@ def write_markdown(series_slug, language, results, genre=None):
     return output_file
 
 
-def generate_sequentially(series_slug, mappings, chapters, language, existing_hooks, wanted, run_id=None, genre=None, redo=frozenset()):
+def generate_sequentially(series_slug, mappings, chapters, language, existing_hooks, wanted, run_id=None, genre=None, redo=frozenset(), near=False, offset=0):
     """Pass 2: every precap in chapter order, one at a time, skipping the done.
 
     Each precap is handed every earlier one written for the event, so it can
@@ -183,7 +192,7 @@ def generate_sequentially(series_slug, mappings, chapters, language, existing_ho
 
             results = [r for r in results if r[0] != chapter_number]
             results.append((chapter_number, mapping.target_chapter, hook))
-            write_markdown(series_slug, language, results, genre=genre)
+            write_markdown(series_slug, language, results, genre=genre, near=near, offset=offset)
             print(f"\n{'-' * 50}")
             print(f"{tag}Chapter {chapter_number} -> {mapping.target_chapter}")
             print(f"{'-' * 50}\nHook: {hook}\n{'-' * 50}")
@@ -206,14 +215,23 @@ def process_series(series_slug, args, ingestor):
     print(f"SERIES: {series_slug}  (run {run_id})")
     print(f"{'=' * 60}")
 
-    chapters = list(
-        islice(ingestor.iter_series_chapters(series_slug, language=args.language), CHAPTER_LIMIT)
-    )
+    chapter_iter = ingestor.iter_series_chapters(series_slug, language=args.language)
+    chapters = list(islice(chapter_iter, NEAR_CHAPTER_LIMIT if args.flow == "near" else CHAPTER_LIMIT))
+
+    # Same skip as main.py: an author's note or promo as chapter 1 has nothing to
+    # bridge from. Internally chapters stay numbered from 1 as the planner sees
+    # them; `offset` puts the series' own numbers back in the markdown.
+    offset = 0
+    if is_non_story_opener(chapters):
+        offset = 1
+        print(f"{tag}Chapter 1 looks like a non-story opener ({len(chapters[0])} chars) — skipping it")
+        chapters = chapters[1:] + list(islice(chapter_iter, 1))
     if len(chapters) <= PRECAP_LIMIT:
         print(f"{tag}Need more than {PRECAP_LIMIT} chapters to pick an event from — nothing to generate")
         return []
 
-    output_dir = series_output_dir(series_slug, args.genre)
+    near = args.flow == "near"
+    output_dir = series_output_dir(series_slug, args.genre, near)
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / f"{series_slug}.md"
     blueprint_file = output_dir / f"{series_slug}_blueprint.xml"
@@ -226,13 +244,13 @@ def process_series(series_slug, args, ingestor):
 
     try:
         if args.chapters:
-            mappings, rejected = read_blueprint(blueprint_file, chapters, tag)
+            mappings, rejected = read_blueprint(blueprint_file, chapters, tag, near, offset)
             if not mappings:
                 print(f"{tag}--chapters needs a stored blueprint ({blueprint_file}) and found none — run without it first")
                 return []
         else:
             mappings, rejected = ensure_blueprint(
-                chapters, args.language, blueprint_file, run_id, tag, genre=args.genre
+                chapters, args.language, blueprint_file, run_id, tag, genre=args.genre, near=near, offset=offset,
             )
     except BlueprintParseError as e:
         # the planning call is expensive; keep what came back so it can be read
@@ -244,9 +262,9 @@ def process_series(series_slug, args, ingestor):
     for chapter_number, reason in rejected:
         print(f"{tag}Chapter {chapter_number} dropped by constraint check — {reason}")
 
-    existing_hooks = read_existing_hooks(output_file)
+    existing_hooks = read_existing_hooks(output_file, offset)
     planned = {m.chapter_number for m in mappings}
-    redo = set(args.chapters or ())
+    redo = {n - offset for n in args.chapters or ()}
     if redo - planned:
         print(f"{tag}Chapters {sorted(redo - planned)} have no mapping in the blueprint — skipping them")
         redo &= planned
@@ -265,14 +283,14 @@ def process_series(series_slug, args, ingestor):
     print(f"{tag}Generating {len(wanted)} precaps sequentially: {sorted(wanted)}")
     results, failed = generate_sequentially(
         series_slug, mappings, chapters, args.language, existing_hooks, wanted, run_id,
-        genre=args.genre, redo=redo,
+        genre=args.genre, redo=redo, near=near, offset=offset,
     )
 
     if failed:
         print(f"\n{tag}Failed chapters: {sorted(failed)}")
 
     results.sort(key=lambda row: row[0])
-    output_file = write_markdown(series_slug, args.language, results, genre=args.genre)
+    output_file = write_markdown(series_slug, args.language, results, genre=args.genre, near=near, offset=offset)
 
     print(
         f"\n{tag}Done — {len(results)} hooks on file "
@@ -289,7 +307,11 @@ def main():
     parser.add_argument(
         "--genre",
         default=GENRE,
-        help="Genre, e.g. romance — swaps the peak-event vocabulary and hook-writing guidance for that genre (default: the generic rules)",
+        help="Genre, e.g. romance — forces that genre's hook-writing guidance. Without it, the romance voice is used only when the planner picks a romantic event",
+    )
+    parser.add_argument(
+        "--flow", choices=("event", "near"), default="event",
+        help="event: every precap points at one big event; near: each chapter may point at its own near event (files go to output-latest-rq/<slug>/near-payoff/)",
     )
     parser.add_argument(
         "--fresh",
